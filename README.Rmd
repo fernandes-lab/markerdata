@@ -1,0 +1,124 @@
+---
+output: github_document
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "README-"
+)
+```
+
+# markerdata: Marker Data Sets for Breeding Simulation
+
+[![R-CMD-check](https://github.com/fernandes-lab/markerdata/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/fernandes-lab/markerdata/actions/workflows/R-CMD-check.yaml)
+
+markerdata provides curated single-nucleotide polymorphism (SNP) marker
+panels drawn from public genomic resources across several species (maize,
+soybean, eucalyptus, sorghum, rice, cattle, poplar, wheat). Each panel is a
+plain data frame with five marker-metadata columns (`snp`, `allele`, `chr`,
+`pos`, `cm`) followed by one `-1`/`0`/`1` genotype column per individual, so
+it can be used directly as founder genotypes for breeding-program simulation
+with `simplePHENOTYPES::as_population()` or with breedingDesigner.
+
+One small maize panel is bundled with the package and loads instantly; the
+other seven panels are downloaded on first use with `marker_data()` and
+cached locally, so later calls are instant too. Altogether the seven
+downloadable panels total about 7.5 MB, and none of them bloat the installed
+package.
+
+## Installation
+
+```{r, eval = FALSE}
+# install.packages("markerdata")  # once on CRAN
+remotes::install_github("fernandes-lab/markerdata")
+```
+
+## Usage
+
+List every data set in the catalog and see which ones are already available
+on this machine:
+
+```{r}
+library(markerdata)
+marker_catalog()[, c("name", "common_name", "n_snp", "n_ind", "het", "mating", "available")]
+```
+
+The bundled maize panel loads without any download:
+
+```{r}
+head(marker_data("SNP55K_maize282_maf04")[, 1:8])
+```
+
+A remote panel is downloaded on first use and cached afterward. Its
+`-1`/`0`/`1` genotype coding is exactly what
+`simplePHENOTYPES::as_population()` expects for founder genotypes:
+
+```{r, eval = FALSE}
+geno <- marker_data("Cattle_div")
+pop <- simplePHENOTYPES::as_population(geno, individuals = 1:100)
+```
+
+## Data sets
+
+```{r, echo = FALSE}
+cat <- marker_catalog()
+
+fmt_download <- function(bytes, bundled) {
+  ifelse(bundled, "bundled", sprintf("%.1f MB", bytes / 1e6))
+}
+
+link_dois <- function(reference, doi) {
+  refs <- strsplit(reference, ";\\s*")[[1]]
+  dois <- strsplit(doi, ";\\s*")[[1]]
+  n <- max(length(refs), length(dois))
+  refs <- rep_len(refs, n)
+  parts <- vapply(seq_len(n), function(i) {
+    if (i <= length(dois) && !is.na(dois[i]) && nzchar(dois[i])) {
+      sprintf("%s [%s](https://doi.org/%s)", refs[i], dois[i], dois[i])
+    } else {
+      refs[i]
+    }
+  }, character(1))
+  paste(parts, collapse = "; ")
+}
+
+tbl <- data.frame(
+  `Data set` = cat$name,
+  Species = cat$species,
+  Panel = cat$panel,
+  `SNPs x individuals` = paste0(
+    format(cat$n_snp, big.mark = ","), " x ", format(cat$n_ind, big.mark = ",")
+  ),
+  `Heterozygous calls` = sprintf("%.1f%%", cat$het * 100),
+  Mating = cat$mating,
+  License = cat$license,
+  Download = fmt_download(cat$bytes, cat$bundled),
+  Reference = mapply(link_dois, cat$reference, cat$doi),
+  check.names = FALSE, stringsAsFactors = FALSE
+)
+knitr::kable(tbl, row.names = FALSE)
+```
+
+## Cache
+
+Downloaded data sets are cached under `marker_cache_dir()`, which resolves
+(in order) `getOption("markerdata.cache")`, the environment variable
+`MARKERDATA_CACHE`, or else `tools::R_user_dir("markerdata", "cache")`. Use
+`marker_download()` to fetch one or more data sets ahead of time (for
+example before working offline), and `marker_cache_clear()` to remove cached
+files again.
+
+## Citing
+
+Cite the package itself with `citation("markerdata")`. Every data set keeps
+its own original license and must be cited on its own terms; get its
+citation with `marker_references("<name>")`, e.g.
+`marker_references("Rice_div")`.
+
+## License
+
+The markerdata package code is released under the MIT license. Each bundled
+or downloadable data set keeps its own original license, listed in the
+License column of the table above.

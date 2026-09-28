@@ -123,6 +123,9 @@ test_that("real network: fetch the smallest remote data set", {
   skip_if(is.na(row$md5) || !nzchar(row$md5), "no md5 recorded for the smallest remote data set yet")
 
   tmp_cache <- withr::local_tempdir()
-  geno <- marker_data(row$name, cache = tmp_cache)
+  geno <- suppressWarnings(marker_data(row$name, cache = tmp_cache))
+  if (is.null(geno)) {
+    skip("release asset not reachable")
+  }
   expect_true(is.data.frame(geno))
 })

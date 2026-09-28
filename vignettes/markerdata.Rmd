@@ -1,0 +1,124 @@
+---
+title: "Marker data sets for breeding simulation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Marker data sets for breeding simulation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(markerdata)
+```
+
+## Introduction
+
+markerdata provides curated single-nucleotide polymorphism (SNP) marker
+panels from public genomic resources, formatted as founder genotypes for
+breeding-program simulation. Every panel is a plain data frame: five marker
+metadata columns (`snp`, `allele`, `chr`, `pos`, `cm`) followed by one
+genotype column per individual, coded `-1`/`0`/`1` (reference homozygote /
+heterozygote / alternate homozygote).
+
+One small maize panel (`SNP55K_maize282_maf04`) is bundled with the package
+and loads instantly. Seven larger panels (soybean, eucalyptus, sorghum,
+rice, cattle, poplar, wheat) are downloaded on first use with
+`marker_data()` and cached locally, so they do not bloat the installed
+package.
+
+## The catalog
+
+`marker_catalog()` lists every data set and whether it is already available
+on this machine (bundled, or already downloaded and cached):
+
+```{r}
+cat <- marker_catalog()
+knitr::kable(cat[, c("name", "common_name", "n_snp", "n_ind", "het", "mating", "license")])
+```
+
+## The bundled data set
+
+`SNP55K_maize282_maf04` is a maize marker matrix for the 282 inbred
+association panel: 10,650 SNPs by 280 inbred lines.
+
+```{r}
+geno <- SNP55K_maize282_maf04
+dim(geno)
+head(geno[, 1:8])
+```
+
+The first five columns are marker metadata; the rest are one genotype
+column per inbred line:
+
+* `snp`: marker name.
+* `allele`: allele pair, e.g. `"A/G"`.
+* `chr`: chromosome, 1-10.
+* `pos`: physical position in base pairs.
+* `cm`: genetic position in centiMorgans.
+
+Every genotype column holds a numeric (double) value in `{-1, 0, 1}`
+(reference homozygote / heterozygote / alternate homozygote). The `cm`
+column is a **synthetic** genetic map, generated from the physical
+positions with `simplePHENOTYPES::synthetic_map()`; it is not taken from
+any published maize linkage map, but it gives meiosis-based simulation
+functions (crossing, selfing, doubled haploids) usable recombination
+distances on this example data.
+
+## Getting a remote data set
+
+The other seven panels are not bundled; the first call to `marker_data()`
+downloads and caches the requested one, and later calls are served from the
+cache without any network access.
+
+```{r, eval = FALSE}
+geno <- marker_data("Rice_div")
+```
+
+On first use, this downloads a small, packed file to `marker_cache_dir()`
+(by default `tools::R_user_dir("markerdata", "cache")`, overridable with
+`options(markerdata.cache = ...)` or the `MARKERDATA_CACHE` environment
+variable), verifies it against a recorded checksum, and unpacks it into a
+regular data frame. Subsequent calls with the same cache reuse the cached
+file instantly. If the download fails (for example, no network connection),
+`marker_data()` warns and returns `NULL` rather than raising an error.
+
+Use `marker_download()` to fetch one or more data sets ahead of time, for
+example before going offline:
+
+```{r, eval = FALSE}
+marker_download(c("Rice_div", "Cattle_div"))
+```
+
+and `marker_cache_clear()` to remove cached files again:
+
+```{r, eval = FALSE}
+marker_cache_clear("Rice_div")
+```
+
+## Using the data with simplePHENOTYPES
+
+Every marker data frame in this package is ready to use as founder
+genotypes with `simplePHENOTYPES::as_population()`:
+
+```{r, eval = FALSE}
+geno <- marker_data("Cattle_div")
+pop <- simplePHENOTYPES::as_population(geno, individuals = 1:100)
+```
+
+## Citing the data
+
+Cite the package itself with `citation("markerdata")`. Each data set keeps
+its own original license and literature reference; get its citation with
+`marker_references()`:
+
+```{r}
+marker_references("SNP55K_maize282_maf04")
+print(marker_references("Rice_div"), style = "text")
+```

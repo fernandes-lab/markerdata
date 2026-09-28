@@ -24,10 +24,10 @@
 #' [EUChip60K_div], [Sorghum_div], [Rice_div], [Cattle_div], [Poplar_div],
 #' [Wheat_div]) are downloaded on first use with [marker_data()].
 #'
-#' @format A data frame with 10,650 rows (SNPs) and 285 columns: the first
-#'   five are `snp`, `allele`, `chr`, `pos`, `cm` (see the Columns section
-#'   below); the remaining 280 are one genotype column per inbred line,
-#'   named by accession, each an integer in `{-1, 0, 1}`.
+#' @format A data frame with 10,650 rows (SNPs) and 285 columns. The first
+#'   five columns are marker metadata (`snp`, `allele`, `chr`, `pos`, `cm`);
+#'   the remaining 280 columns are inbred lines, each a numeric (double)
+#'   genotype in `{-1, 0, 1}`.
 #' @section Columns:
 #' \describe{
 #'   \item{snp}{marker name.}
@@ -36,6 +36,9 @@
 #'   \item{pos}{physical position in base pairs (B73 AGPv2).}
 #'   \item{cm}{genetic position in centiMorgans (see the section below).}
 #' }
+#' The remaining columns, one per inbred line and named by accession, each
+#' hold a numeric (double) genotype in `{-1, 0, 1}` (reference homozygote /
+#' heterozygote / alternate homozygote).
 #' @section The genetic map is synthetic:
 #' `cm` holds a modelled genetic map, generated from the physical positions
 #' with `simplePHENOTYPES::synthetic_map()`; it is not taken from any

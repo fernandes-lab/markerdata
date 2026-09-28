@@ -38,9 +38,8 @@ marker_cache_dir <- function() {
 #' @return Invisibly, a `character()` vector of the file paths that were
 #'   removed.
 #' @examples
-#' \donttest{
-#' marker_cache_clear("Rice_div")
-#' }
+#' tmp <- tempfile("markerdata-cache-")
+#' marker_cache_clear(cache = tmp) # nothing cached there yet: returns character(0)
 #' @export
 marker_cache_clear <- function(names = NULL, cache = marker_cache_dir()) {
   cat <- .catalog()

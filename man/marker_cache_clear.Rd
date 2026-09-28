@@ -22,7 +22,6 @@ Deletes the cached file(s) for one or more remote marker data sets from
 the local cache directory.
 }
 \examples{
-\donttest{
-marker_cache_clear("Rice_div")
-}
+tmp <- tempfile("markerdata-cache-")
+marker_cache_clear(cache = tmp) # nothing cached there yet: returns character(0)
 }

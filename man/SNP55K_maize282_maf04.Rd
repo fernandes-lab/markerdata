@@ -5,16 +5,10 @@
 \alias{SNP55K_maize282_maf04}
 \title{Maize 282 association panel genotypes (MaizeSNP50 subset)}
 \format{
-A data frame with 10,650 rows (SNPs) and 285 columns:
-\describe{
-\item{snp}{marker name.}
-\item{allele}{allele pair, e.g. "A/G".}
-\item{chr}{chromosome, 1-10.}
-\item{pos}{physical position in base pairs (B73 AGPv2).}
-\item{cm}{genetic position in centiMorgans (see the section below).}
-\item{(280 individual columns)}{one genotype column per inbred line,
-named by accession, each an integer in \verb{\{-1, 0, 1\}}.}
-}
+A data frame with 10,650 rows (SNPs) and 285 columns. The first
+five columns are marker metadata (\code{snp}, \code{allele}, \code{chr}, \code{pos}, \code{cm});
+the remaining 280 columns are inbred lines, each a numeric (double)
+genotype in \verb{\{-1, 0, 1\}}.
 }
 \source{
 Panzea, maize282set genotypes (Illumina MaizeSNP50 array, MAF >
@@ -34,6 +28,20 @@ panels documented elsewhere in this package (\link{SoySNP50K_div},
 \link{EUChip60K_div}, \link{Sorghum_div}, \link{Rice_div}, \link{Cattle_div}, \link{Poplar_div},
 \link{Wheat_div}) are downloaded on first use with \code{\link[=marker_data]{marker_data()}}.
 }
+\section{Columns}{
+
+\describe{
+\item{snp}{marker name.}
+\item{allele}{allele pair, e.g. "A/G".}
+\item{chr}{chromosome, 1-10.}
+\item{pos}{physical position in base pairs (B73 AGPv2).}
+\item{cm}{genetic position in centiMorgans (see the section below).}
+}
+The remaining columns, one per inbred line and named by accession, each
+hold a numeric (double) genotype in \verb{\{-1, 0, 1\}} (reference homozygote /
+heterozygote / alternate homozygote).
+}
+
 \section{The genetic map is synthetic}{
 
 \code{cm} holds a modelled genetic map, generated from the physical positions
