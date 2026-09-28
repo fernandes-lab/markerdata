@@ -1,0 +1,35 @@
+# R
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+/*.Rcheck/
+*.tar.gz
+inst/doc
+/doc/
+/Meta/
+README.html
+
+# OS / editors / agents
+.DS_Store
+.vscode/
+.idea/
+.claude/
+CLAUDE.md
+
+# Built marker objects (12k-SNP .rda files, ~12 MB) and the packed release
+# assets made from them. They are published as GitHub release assets, not
+# committed. Rebuild with data-raw/*.R; pack with data-raw/release.R.
+data-raw/built/
+data-raw/release/
+
+# User-downloaded raw genotype files for data-raw/*.R (large; from Dryad,
+# SoyBase, T3, Zenodo). Never committed.
+data-raw/cattle/
+data-raw/eucalyptus/
+data-raw/poplar/
+data-raw/rice/
+data-raw/sorghum/
+data-raw/soybase_cache/
+data-raw/wheat/

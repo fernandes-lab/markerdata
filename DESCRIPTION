@@ -1,0 +1,32 @@
+Package: markerdata
+Title: Marker Data Sets for Breeding Simulation
+Version: 0.1.0
+Authors@R:
+    person("Samuel B.", "Fernandes", email = "samuelbf@uark.edu",
+           role = c("aut", "cre"), comment = c(ORCID = "0000-0001-8269-535X"))
+Description: Curated single-nucleotide polymorphism (SNP) marker panels from
+    public genomic resources, formatted as founder genotypes for breeding-program
+    simulation with 'simplePHENOTYPES' and 'breedingDesigner'. One small maize
+    panel is bundled; larger panels (cattle, eucalyptus, poplar, rice, sorghum,
+    soybean, wheat) are downloaded on first use from the package's GitHub
+    release and cached locally. Every data set is documented with its source
+    repository, license and literature reference, which are also available as
+    citation objects.
+License: MIT + file LICENSE
+URL: https://github.com/fernandes-lab/markerdata
+BugReports: https://github.com/fernandes-lab/markerdata/issues
+Depends:
+    R (>= 4.1)
+Imports:
+    tools,
+    utils
+Suggests:
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+VignetteBuilder: knitr
+Encoding: UTF-8
+LazyData: true
+LazyDataCompression: xz
+Roxygen: list(markdown = TRUE)
+Config/testthat/edition: 3
