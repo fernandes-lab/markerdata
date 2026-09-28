@@ -1,11 +1,12 @@
 #!/usr/bin/env Rscript
 # data-raw/sorghum_wue.R
 #
-# Build a *sorghum* genotype dataset for the Breeding Designer / simplePHENOTYPES,
-# in the SAME numeric format as simplePHENOTYPES::SNP55K_maize282_maf04 and
-# breedingDesigner::SoySNP50K_div / EUChip60K_div (a data.frame whose first five
-# columns are snp, allele, chr, pos, cm, followed by one -1/0/1 column per
-# individual).
+# Build the *sorghum* marker dataset (Sorghum_div) for the markerdata package,
+# in the SAME numeric format as simplePHENOTYPES::SNP55K_maize282_maf04 (a
+# data.frame whose first five columns are snp, allele, chr, pos, cm, followed
+# by one -1/0/1 column per individual). markerdata does not ship this object;
+# it publishes the packed result as a GitHub release asset that marker_data()
+# downloads and caches on first use (see data-raw/release.R).
 #
 # Source: the sorghum WEST Diversity Panel genotyped by GBS, deposited (CC-BY-4.0,
 # redistributable with attribution) at Zenodo doi:10.5281/zenodo.5019227
@@ -16,6 +17,8 @@
 #     Spalding E.P., Leakey A.D.B. (2021) "Machine learning-enabled phenotyping for
 #     GWAS and TWAS of WUE traits in 869 field-grown sorghum accessions",
 #     Plant Physiology 187(3):1481-1500, doi:10.1093/plphys/kiab346
+# License: CC-BY-4.0 (redistributable with attribution); cite the paper above
+# and the Zenodo deposit (see data-raw/catalog.R / marker_references()).
 # The input markers.txt below is a recoded -1/0/1 genotype matrix derived from that
 # deposit (842 accessions x ~499k SNPs).
 #
@@ -28,22 +31,21 @@
 # loading it into R, (2) thins the MAF>=0.05 SNPs evenly across the 10 sorghum
 # chromosomes to n_snps, (3) extracts just those rows, (4) synthesizes SNP IDs
 # (S<chr>_<pos>) and a synthetic genetic map, cleans the doubled accession names,
-# and saves data/Sorghum_div.rda.
-#
-# NOTE: the raw markers.txt and the built .rda are NOT tracked in git yet (see
-# .gitignore) -- the example marker datasets are slated to move to a separate
-# companion data package (breedingDesignerData) so breedingDesigner stays small.
+# and saves data-raw/built/Sorghum_div.rda.
 #
 # Usage:  Rscript data-raw/sorghum_wue.R [markers.txt] [n_snps] [out.rda]
-#   defaults: the collaborator's markers.txt, 12000 SNPs -> data/Sorghum_div.rda,
-#             all accessions.
+#   defaults: data-raw/sorghum/markers.txt, 12000 SNPs ->
+#             data-raw/built/Sorghum_div.rda, all accessions.
 
 suppressMessages(library(simplePHENOTYPES))
 args   <- commandArgs(trailingOnly = TRUE)
-infile <- if (length(args) >= 1) args[[1]] else
-  "/Users/samuelbf/Library/CloudStorage/OneDrive-UniversityofArkansas/UARK/collaboration/Danilo/ML_haplotype_gwas/markers.txt"
+infile <- if (length(args) >= 1) args[[1]] else "data-raw/sorghum/markers.txt"
+# Known location of the recoded -1/0/1 matrix as of this writing, outside this
+# package (a collaborator's project folder) -- copy or symlink it to
+# data-raw/sorghum/markers.txt, or pass its path as the first argument:
+#   "/Users/samuelbf/Library/CloudStorage/OneDrive-UniversityofArkansas/UARK/collaboration/Danilo/ML_haplotype_gwas/markers.txt"
 n_snps <- if (length(args) >= 2) as.integer(args[[2]]) else 12000L
-out    <- if (length(args) >= 3) args[[3]] else "data/Sorghum_div.rda"
+out    <- if (length(args) >= 3) args[[3]] else "data-raw/built/Sorghum_div.rda"
 stopifnot(file.exists(infile))
 
 tmp     <- tempdir()

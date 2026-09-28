@@ -1,0 +1,28 @@
+citHeader("To cite markerdata in publications use:")
+
+# `meta` may be a packageDescription-style list (the normal citation()
+# call) or a plain named character vector (e.g. read.dcf(...)[1, ], used by
+# some CITATION checkers) -- read fields defensively so both work, and fall
+# back sensibly when a field (such as Date, which this package's DESCRIPTION
+# does not set) is absent.
+.md_field <- function(field) {
+  v <- tryCatch(meta[[field]], error = function(e) NULL)
+  if (is.null(v) || (length(v) == 1L && is.na(v))) NA_character_ else as.character(v)[1L]
+}
+
+.date <- .md_field("Date")
+year <- if (!is.na(.date)) sub("-.*", "", .date) else format(Sys.Date(), "%Y")
+
+.version <- .md_field("Version")
+note <- if (!is.na(.version)) paste("R package version", .version) else "R package version"
+
+bibentry(
+  bibtype = "Manual",
+  title   = "markerdata: Marker Data Sets for Breeding Simulation",
+  author  = person("Samuel B.", "Fernandes"),
+  year    = year,
+  note    = note,
+  url     = "https://github.com/fernandes-lab/markerdata"
+)
+
+citFooter("Each data set has its own source publication; get its citation with marker_references(\"<name>\").")

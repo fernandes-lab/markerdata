@@ -1,9 +1,12 @@
 #!/usr/bin/env Rscript
 # data-raw/dryad_cattle_decker.R
 #
-# Build a *cattle* genotype dataset for the Breeding Designer / simplePHENOTYPES,
+# Build the *cattle* marker dataset (Cattle_div) for the markerdata package,
 # in the SAME numeric format as simplePHENOTYPES::SNP55K_maize282_maf04 (snp,
-# allele, chr, pos, cm, then one -1/0/1 column per animal).
+# allele, chr, pos, cm, then one -1/0/1 column per animal). markerdata does
+# not ship this object; it publishes the packed result as a GitHub release
+# asset that marker_data() downloads and caches on first use (see
+# data-raw/release.R).
 #
 # Source: worldwide cattle diversity panel (134 breeds), Illumina BovineSNP50,
 # deposited (CC0) at
@@ -13,23 +16,24 @@
 #     Hanotte O., ... Taylor J.F. (2014) "Worldwide Patterns of Ancestry,
 #     Divergence, and Admixture in Domesticated Cattle", PLoS Genetics
 #     10(3):e1004254, doi:10.1371/journal.pgen.1004254
+# License: CC0 (public domain, Dryad); cite the paper above.
 #
 # PLINK .ped alleles are coded 1 (Illumina A) / 2 (Illumina B), 0 = missing; the
 # .map gives chr (UMD3.1) + bp. This recodes allele dosage to -1/0/1 (count of the
 # B allele, minus 1), drops the unassigned chromosome 0, adds a synthetic genetic
 # map, MAF-filters (>=0.05) and thins evenly across the 29 autosomes to a curated
-# 12,000-SNP subset -> data/Cattle_div.rda. Cattle are OUTBRED, so heterozygosity
-# is present (a dominance layer can be simulated, cf. EUChip60K_div).
-#
-# NOTE: the raw file and the built .rda are NOT tracked in git (see .gitignore).
+# 12,000-SNP subset -> data-raw/built/Cattle_div.rda. Cattle are OUTBRED, so
+# heterozygosity is present (a dominance layer can be simulated, cf. EUChip60K_div).
 #
 # Usage:  Rscript data-raw/dryad_cattle_decker.R [WorldWideCattleDryad.zip] [n_snps] [out.rda]
+#   defaults: data-raw/cattle/WorldWideCattleDryad.zip, 12000 SNPs ->
+#             data-raw/built/Cattle_div.rda.
 
 suppressMessages(library(simplePHENOTYPES))
 args   <- commandArgs(trailingOnly = TRUE)
 infile <- if (length(args) >= 1) args[[1]] else "data-raw/cattle/WorldWideCattleDryad.zip"
 n_snps <- if (length(args) >= 2) as.integer(args[[2]]) else 12000L
-out    <- if (length(args) >= 3) args[[3]] else "data/Cattle_div.rda"
+out    <- if (length(args) >= 3) args[[3]] else "data-raw/built/Cattle_div.rda"
 stopifnot(file.exists(infile))
 
 tmp <- file.path(tempdir(), "cattle"); dir.create(tmp, showWarnings = FALSE)

@@ -1,11 +1,13 @@
 #!/usr/bin/env Rscript
 # data-raw/dryad_euchip60k.R
 #
-# Build a *eucalyptus* genotype dataset for the Breeding Designer /
-# simplePHENOTYPES, in the SAME numeric format as
-# simplePHENOTYPES::SNP55K_maize282_maf04 and breedingDesigner::SoySNP50K_div
-# (a data.frame whose first five columns are snp, allele, chr, pos, cm, followed
-# by one -1/0/1 column per individual).
+# Build the *eucalyptus* marker dataset (EUChip60K_div) for the markerdata
+# package, in the SAME numeric format as
+# simplePHENOTYPES::SNP55K_maize282_maf04 (a data.frame whose first five
+# columns are snp, allele, chr, pos, cm, followed by one -1/0/1 column per
+# individual). markerdata does not ship this object; it publishes the packed
+# result as a GitHub release asset that marker_data() downloads and caches on
+# first use (see data-raw/release.R).
 #
 # Source: Eucalyptus grandis x E. urophylla synthetic breeding population,
 # genotyped on the EUChip60K Illumina Infinium array (Silva-Junior et al. 2015,
@@ -16,9 +18,10 @@
 #     Heredity 119:245-255, doi:10.1038/hdy.2017.37
 #   Data: Dryad Digital Repository, doi:10.5061/dryad.ms580  (license CC0-1.0,
 #         public domain -- redistributable). File: SNP_Data.txt.
+# License: CC0-1.0 (public domain, Dryad); cite the papers above.
 # Unlike inbred soybean, these trees are OUTBRED (heterozygous loci present), so
-# a dominance layer can be simulated -- required for the reciprocal recurrent
-# selection scheme (SPEC-0011), which exploits heterosis / combining ability.
+# a dominance layer can be simulated -- useful for schemes that exploit
+# heterosis / combining ability, such as reciprocal recurrent selection.
 #
 # SNP_Data.txt layout: an individuals x SNPs matrix, space-separated, header row
 # = SNP IDs "EuBR{chr}s{pos}A..B..C..D..E.." (chr 01-11, pos in bp); the first
@@ -27,17 +30,18 @@
 # This script transposes to SNPs x individuals, recodes 0/1/2 -> -1/0/1, parses
 # chr/pos from the SNP IDs, adds a synthetic genetic map (the array carries no
 # cM), sanity-checks with as_population(), and saves a curated MAF-filtered
-# subset as data/EUChip60K_div.rda (mirroring data-raw/soybase_soysnp50k.R).
+# subset as data-raw/built/EUChip60K_div.rda (mirroring
+# data-raw/soybase_soysnp50k.R).
 #
 # Usage:  Rscript data-raw/dryad_euchip60k.R \
 #           [data-raw/eucalyptus/SNP_Data.txt] [n_snps] [out.rda]
-#         (defaults: 12000 SNPs -> data/EUChip60K_div.rda, all 768 trees)
+#         (defaults: 12000 SNPs -> data-raw/built/EUChip60K_div.rda, all 768 trees)
 
 suppressMessages(library(simplePHENOTYPES))
 args  <- commandArgs(trailingOnly = TRUE)
 infile <- if (length(args) >= 1) args[[1]] else "data-raw/eucalyptus/SNP_Data.txt"
 n_snps <- if (length(args) >= 2) as.integer(args[[2]]) else 12000L
-out    <- if (length(args) >= 3) args[[3]] else "data/EUChip60K_div.rda"
+out    <- if (length(args) >= 3) args[[3]] else "data-raw/built/EUChip60K_div.rda"
 
 stopifnot(file.exists(infile))
 
@@ -102,6 +106,7 @@ EUChip60K_div <- cbind(EUChip60K_div, as.data.frame(Gt[sel, , drop = FALSE],
                                                     check.names = FALSE))
 
 ## 5. sanity check + save ---------------------------------------------------
+stopifnot(all(unlist(EUChip60K_div[, 6:ncol(EUChip60K_div)]) %in% c(-1L, 0L, 1L)))
 pop <- as_population(EUChip60K_div,
                      individuals = seq_len(min(10L, ncol(EUChip60K_div) - 5L)))
 gt  <- table(unlist(EUChip60K_div[, 6:ncol(EUChip60K_div)]))

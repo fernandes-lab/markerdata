@@ -1,9 +1,12 @@
 #!/usr/bin/env Rscript
 # data-raw/dryad_poplar_geraldes.R
 #
-# Build a *poplar* genotype dataset for the Breeding Designer / simplePHENOTYPES,
+# Build the *poplar* marker dataset (Poplar_div) for the markerdata package,
 # in the SAME numeric format as simplePHENOTYPES::SNP55K_maize282_maf04 (snp,
-# allele, chr, pos, cm, then one -1/0/1 column per accession).
+# allele, chr, pos, cm, then one -1/0/1 column per accession). markerdata does
+# not ship this object; it publishes the packed result as a GitHub release
+# asset that marker_data() downloads and caches on first use (see
+# data-raw/release.R).
 #
 # Source: Populus trichocarpa landscape-genomics panel genotyped on the
 # PoplarConsortium-ORNL 34K SNP array, deposited (CC0) at
@@ -16,6 +19,7 @@
 #     68(11):3260-3280, doi:10.1111/evo.12497
 #   Array: Geraldes A. et al. (2013) "A 34K SNP genotyping array for Populus
 #     trichocarpa", Mol. Ecol. Resour. 13(2):306-323, doi:10.1111/1755-0998.12056
+# License: CC0 (public domain, Dryad); cite the papers above.
 #
 # The file is an Illumina GenomeStudio final report (CR line endings; an 8-line
 # [Header], then [Data]: a marker x sample matrix). Each cell is "<GT>|<GenCall>"
@@ -24,19 +28,19 @@
 # GenCall score, recodes each biallelic SNP to -1/0/1 (dosage of the alphabetically
 # greater allele, minus 1), parses chr/pos from the name, keeps the 19 nuclear
 # chromosomes, adds a synthetic map, MAF-filters (>=0.05) and thins evenly to a
-# curated 12,000-SNP subset -> data/Poplar_div.rda. Poplar trees are OUTBRED, so a
-# dominance layer can be simulated (cf. EUChip60K_div).
-#
-# NOTE: the raw file and the built .rda are NOT tracked in git (see .gitignore).
+# curated 12,000-SNP subset -> data-raw/built/Poplar_div.rda. Poplar trees are
+# OUTBRED, so a dominance layer can be simulated (cf. EUChip60K_div).
 #
 # Usage:  Rscript data-raw/dryad_poplar_geraldes.R [report.txt] [n_snps] [out.rda]
+#   defaults: data-raw/poplar/FOR_DRYAD_TandB_fwd_june2013_434.txt, 12000 SNPs ->
+#             data-raw/built/Poplar_div.rda.
 
 suppressMessages(library(simplePHENOTYPES))
 args   <- commandArgs(trailingOnly = TRUE)
 infile <- if (length(args) >= 1) args[[1]] else
   "data-raw/poplar/FOR_DRYAD_TandB_fwd_june2013_434.txt"
 n_snps <- if (length(args) >= 2) as.integer(args[[2]]) else 12000L
-out    <- if (length(args) >= 3) args[[3]] else "data/Poplar_div.rda"
+out    <- if (length(args) >= 3) args[[3]] else "data-raw/built/Poplar_div.rda"
 stopifnot(file.exists(infile))
 
 ## 1. stream: CR->LF, drop the 9 header lines, strip "|<score>" ------------

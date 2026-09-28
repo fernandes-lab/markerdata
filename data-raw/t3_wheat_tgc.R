@@ -1,9 +1,11 @@
 #!/usr/bin/env Rscript
 # data-raw/t3_wheat_tgc.R
 #
-# Build a *wheat* genotype dataset for the Breeding Designer / simplePHENOTYPES, in
+# Build the *wheat* marker dataset (Wheat_div) for the markerdata package, in
 # the SAME numeric format as simplePHENOTYPES::SNP55K_maize282_maf04 (snp, allele,
-# chr, pos, cm, then one -1/0/1 column per accession).
+# chr, pos, cm, then one -1/0/1 column per accession). markerdata does not ship
+# this object; it publishes the packed result as a GitHub release asset that
+# marker_data() downloads and caches on first use (see data-raw/release.R).
 #
 # Source: the Tetraploid wheat Global Collection (TGC) -- wild and domesticated
 # emmer, durum landraces and tetraploid subspecies -- genotyped on the wheat 90K
@@ -15,30 +17,35 @@
 #     future improvement targets", Nature Genetics 51:885-895,
 #     doi:10.1038/s41588-019-0381-3   (reference per USDA GrainGenes,
 #     "Global Durum Genomic Resources").
+# License: T3/Wheat public data; cite the paper above. Redistribution terms
+# have not been confirmed with T3/Wheat -- see data-raw/README.md.
 #
 # The VCF (## meta, then a #CHROM header + one row per SNP) is recoded to -1/0/1
 # (alt-allele dosage minus 1) from the GT field, restricted to biallelic SNPs on
 # the nuclear chromosomes, given a synthetic map, MAF-filtered (>=0.05) and thinned
-# evenly across chromosomes to a curated 12,000-SNP subset -> data/Wheat_div.rda.
-# Tetraploid wheat lines are largely homozygous (additive schemes; cf.
-# SoySNP50K_div).
+# evenly across chromosomes to a curated 12,000-SNP subset ->
+# data-raw/built/Wheat_div.rda. Tetraploid wheat lines are largely homozygous
+# (additive schemes; cf. SoySNP50K_div).
 #
-# POLYPLOIDY CAVEAT: durum/emmer wheat is an allotetraploid (AABB). The 90K SNPs
-# are subgenome-specific, so each is treated as a diploid locus (the VCF already
-# calls diploid GT 0/0, 0/1, 1/1) -- the standard array treatment, but an
-# approximation that ignores homoeology / tetrasomic inheritance. A faithful model
-# needs the polyploid framework planned in simplePHENOTYPES; migrate then.
-#
-# NOTE: the raw file and the built .rda are NOT tracked in git (see .gitignore).
+# POLYPLOIDY NOTE: durum/emmer wheat is an allotetraploid (2n=4x=28, AABB) with
+# DISOMIC inheritance (homologues pair within a subgenome; homoeologues do not,
+# under the Ph1 system). A subgenome-specific SNP on chromosome 1A therefore
+# segregates as an ordinary diploid locus linked only to other 1A markers, which
+# is exactly what this script's diploid-per-subgenome coding (VCF GT 0/0, 0/1,
+# 1/1 -> -1/0/1, one genetic map per chromosome 1A..7B) represents: the model is
+# not an approximation of the inheritance. The only approximation is at the
+# assay level (the 90K array's probes are subgenome-specific).
 #
 # Usage:  Rscript data-raw/t3_wheat_tgc.R [collection.vcf(.gz)] [n_snps] [out.rda]
+#   defaults: the first *.vcf(.gz) under data-raw/wheat/, 12000 SNPs ->
+#             data-raw/built/Wheat_div.rda.
 
 suppressMessages(library(simplePHENOTYPES))
 args   <- commandArgs(trailingOnly = TRUE)
 infile <- if (length(args) >= 1) args[[1]] else
   list.files("data-raw/wheat", "\\.vcf(\\.gz)?$", full.names = TRUE)[1]
 n_snps <- if (length(args) >= 2) as.integer(args[[2]]) else 12000L
-out    <- if (length(args) >= 3) args[[3]] else "data/Wheat_div.rda"
+out    <- if (length(args) >= 3) args[[3]] else "data-raw/built/Wheat_div.rda"
 stopifnot(!is.na(infile), file.exists(infile))
 message("VCF: ", infile, " (", round(file.size(infile)/1e6), " MB)")
 

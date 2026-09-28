@@ -1,10 +1,12 @@
 #!/usr/bin/env Rscript
 # data-raw/dryad_rice_spindel.R
 #
-# Build a *rice* genotype dataset for the Breeding Designer / simplePHENOTYPES, in
+# Build the *rice* marker dataset (Rice_div) for the markerdata package, in
 # the SAME numeric format as simplePHENOTYPES::SNP55K_maize282_maf04 (a data.frame
 # whose first five columns are snp, allele, chr, pos, cm, followed by one -1/0/1
-# column per accession).
+# column per accession). markerdata does not ship this object; it publishes the
+# packed result as a GitHub release asset that marker_data() downloads and
+# caches on first use (see data-raw/release.R).
 #
 # Source: the IRRI elite tropical rice genomic-selection breeding panel (indica /
 # indica-admixed), genotyped by GBS, deposited (CC0) at
@@ -16,23 +18,24 @@
 #     Population Composition, Marker Number and Statistical Model on Accuracy of
 #     Rice Genomic Selection in Elite, Tropical Rice Breeding Lines",
 #     PLoS Genetics 11(2):e1004982, doi:10.1371/journal.pgen.1004982
+# License: CC0 (public domain, Dryad); cite the paper above.
 #
 # The deposited HapMap (rs#/alleles/chrom/pos + IUPAC single-char genotypes) is
 # converted to numeric -1/0/1 with simplePHENOTYPES::as_numeric(from="hapmap"),
 # given a synthetic genetic map, MAF-filtered (>=0.05) and thinned evenly across
-# the 12 rice chromosomes to a curated 12,000-SNP subset -> data/Rice_div.rda.
-#
-# NOTE: the raw file and the built .rda are NOT tracked in git (see .gitignore) --
-# example marker datasets are slated to move to a companion data package.
+# the 12 rice chromosomes to a curated 12,000-SNP subset ->
+# data-raw/built/Rice_div.rda.
 #
 # Usage:  Rscript data-raw/dryad_rice_spindel.R [hapmap.zip|.hmp.txt] [n_snps] [out.rda]
+#   defaults: data-raw/rice/MET_crfilt_.75_allchrom.hmp.txt.zip, 12000 SNPs ->
+#             data-raw/built/Rice_div.rda.
 
 suppressMessages(library(simplePHENOTYPES))
 args   <- commandArgs(trailingOnly = TRUE)
 infile <- if (length(args) >= 1) args[[1]] else
   "data-raw/rice/MET_crfilt_.75_allchrom.hmp.txt.zip"
 n_snps <- if (length(args) >= 2) as.integer(args[[2]]) else 12000L
-out    <- if (length(args) >= 3) args[[3]] else "data/Rice_div.rda"
+out    <- if (length(args) >= 3) args[[3]] else "data-raw/built/Rice_div.rda"
 stopifnot(file.exists(infile))
 
 tmp <- tempdir()

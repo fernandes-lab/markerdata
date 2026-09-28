@@ -1,10 +1,13 @@
 #!/usr/bin/env Rscript
 # data-raw/soybase_soysnp50k.R
 #
-# Build a *soybean* genotype dataset for the Breeding Designer / simplePHENOTYPES,
-# in the SAME numeric format as simplePHENOTYPES::SNP55K_maize282_maf04 (a
-# data.frame whose first five columns are snp, allele, chr, pos, cm, followed by
-# one -1/0/1 column per accession).
+# Build the *soybean* marker dataset (SoySNP50K_div) for the markerdata
+# package, in the SAME numeric format as
+# simplePHENOTYPES::SNP55K_maize282_maf04 (a data.frame whose first five
+# columns are snp, allele, chr, pos, cm, followed by one -1/0/1 column per
+# accession). markerdata does not ship this object; it publishes the packed
+# result as a GitHub release asset that marker_data() downloads and caches
+# on first use (see data-raw/release.R).
 #
 # Source: SoySNP50K iSelect BeadChip genotyping of the USDA Soybean Germplasm
 # Collection -- 20,087 Glycine max / G. soja accessions x 42,509 SNPs.
@@ -14,27 +17,32 @@
 #   https://data.soybase.org/Glycine/max/diversity/Wm82.gnm2.div.Song_Hyten_2015/
 #     glyma.Wm82.gnm2.div.Song_Hyten_2015.hmp.gz   (HapMap, ~94 MB gz)
 #     glyma.Wm82.gnm2.div.Song_Hyten_2015.vcf.gz   (VCF,    ~138 MB gz)
-# License: public USDA / SoyBase data; please cite the papers above.
+# License: public USDA / SoyBase data; please cite the papers above (see also
+# data-raw/README.md -- redistribution terms for this dataset are not yet
+# confirmed and should be checked before a CRAN release).
 #
-# The full HapMap is large, so this script keeps a subset of accessions (columns)
-# to make a tractable example, converts it to the numeric -1/0/1 format with
-# simplePHENOTYPES::as_numeric(from = "hapmap"), adds a synthetic genetic map (the
-# SoyBase HapMap carries no cM), sanity-checks with as_population(), and saves an
-# .RData you can feed the designer as founders data.
+# The full HapMap is large, so this script (1) downloads it once and caches
+# it under data-raw/soybase_cache/, (2) keeps a manageable slice of
+# accessions (columns), (3) converts that slice to the numeric -1/0/1 format
+# with simplePHENOTYPES::as_numeric(from = "hapmap"), (4) adds a synthetic
+# genetic map (the SoyBase files carry no cM), (5) MAF-filters (>=0.05) and
+# thins evenly across chromosomes to a curated n_snps-SNP subset, and (6)
+# sanity-checks with as_population() and saves data-raw/built/SoySNP50K_div.rda.
 #
-# Usage:  Rscript data-raw/soybase_soysnp50k.R [n_accessions] [out.RData]
-#         (defaults: 300 accessions -> SoySNP50K_div.RData)
+# Usage:  Rscript data-raw/soybase_soysnp50k.R [n_accessions] [n_snps] [out.rda]
+#   defaults: 300 accessions, 12000 SNPs -> data-raw/built/SoySNP50K_div.rda
 
 suppressMessages(library(simplePHENOTYPES))
-args  <- commandArgs(trailingOnly = TRUE)
-n_acc <- if (length(args) >= 1) as.integer(args[[1]]) else 300L
-out   <- if (length(args) >= 2) args[[2]] else "SoySNP50K_div.RData"
+args   <- commandArgs(trailingOnly = TRUE)
+n_acc  <- if (length(args) >= 1) as.integer(args[[1]]) else 300L
+n_snps <- if (length(args) >= 2) as.integer(args[[2]]) else 12000L
+out    <- if (length(args) >= 3) args[[3]] else "data-raw/built/SoySNP50K_div.rda"
 
 base <- "https://data.soybase.org/Glycine/max/diversity/Wm82.gnm2.div.Song_Hyten_2015"
 url  <- file.path(base, "glyma.Wm82.gnm2.div.Song_Hyten_2015.hmp.gz")
 
-cache <- "soybase_cache"
-dir.create(cache, showWarnings = FALSE)
+cache <- "data-raw/soybase_cache"
+dir.create(cache, showWarnings = FALSE, recursive = TRUE)
 gz <- file.path(cache, basename(url))
 if (!file.exists(gz)) {
   message("Downloading SoySNP50K HapMap (~94 MB) ...")
@@ -73,28 +81,30 @@ SoySNP50K_div <- utils::read.delim(num_file, check.names = FALSE,
 # meiosis can be simulated (the engine errors clearly otherwise).
 SoySNP50K_div$cm <- synthetic_map(SoySNP50K_div$chr, SoySNP50K_div$pos)
 
-# sanity check + save
+## finalize: MAF filter (>=0.05) + thin evenly across chromosomes to n_snps -
+# This is the step that turns the full converted slice into the curated,
+# shipped-size subset (mirrors the finalize step in the other data-raw/*.R
+# scripts).
+G   <- as.matrix(SoySNP50K_div[, 6:ncol(SoySNP50K_div), drop = FALSE])
+p   <- (rowMeans(G) + 1) / 2
+maf <- pmin(p, 1 - p)
+keep <- which(maf >= 0.05)
+message(sprintf("SNPs with MAF >= 0.05: %d / %d (chromosome labels: %d distinct).",
+                length(keep), length(maf),
+                length(unique(SoySNP50K_div$chr[keep]))))
+ord <- keep[order(SoySNP50K_div$chr[keep], SoySNP50K_div$pos[keep])]
+if (length(ord) > n_snps) ord <- ord[round(seq(1, length(ord), length.out = n_snps))]
+SoySNP50K_div <- SoySNP50K_div[ord, , drop = FALSE]
+rownames(SoySNP50K_div) <- NULL
+
+## sanity check + save -------------------------------------------------------
+stopifnot(all(unlist(SoySNP50K_div[, 6:ncol(SoySNP50K_div)]) %in% c(-1L, 0L, 1L)))
 pop <- as_population(SoySNP50K_div,
                      individuals = seq_len(min(10L, ncol(SoySNP50K_div) - 5L)))
+gt  <- table(unlist(SoySNP50K_div[, 6:ncol(SoySNP50K_div)]))
 message(sprintf("Built SoySNP50K_div: %d SNPs x %d accessions (as_population OK: %s).",
                 nrow(SoySNP50K_div), ncol(SoySNP50K_div) - 5L,
                 inherits(pop, "Population")))
-save(SoySNP50K_div, file = out)
-message("Saved -> ", normalizePath(out))
-
-# ---- This is how the bundled dataset was built -----------------------------
-# breedingDesigner already ships a curated subset as data(SoySNP50K_div) (12,000
-# MAF>=0.05 SNPs x 300 accessions; see R/data.R), so the canvas offers it directly
-# in the Genotype menu and the soybean templates use it. Run this script to rebuild
-# or enlarge that subset (edit n_accessions / the MAF & thinning in the finalize
-# step below), or to produce your own .RData:
-#   run_design(design, data_objects = list(SoySNP50K_div = SoySNP50K_div))
-#   # ...where a `founders` node has params$data == "SoySNP50K_div".
-#
-# To regenerate the bundled data/SoySNP50K_div.rda from this object:
-#   d <- readRDS("soybase_cache/SoySNP50K_div_full.rds")
-#   G <- as.matrix(d[,-(1:5)]); p <- (rowMeans(G)+1)/2; maf <- pmin(p,1-p)
-#   keep <- which(maf >= 0.05); if (length(keep) > 12000)
-#     keep <- keep[round(seq(1, length(keep), length.out = 12000))]
-#   SoySNP50K_div <- d[keep, , drop = FALSE]; rownames(SoySNP50K_div) <- NULL
-#   save(SoySNP50K_div, file = "data/SoySNP50K_div.rda", compress = "xz")
+message("Genotype codes: ", paste(names(gt), gt, sep = "=", collapse = "  "))
+save(SoySNP50K_div, file = out, compress = "xz")
+message(sprintf("Saved -> %s (%.0f KB).", normalizePath(out), file.size(out) / 1024))
