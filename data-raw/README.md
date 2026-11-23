@@ -203,14 +203,13 @@ released dataset (asserted by `release.R`).
 
 ## Checklist before a CRAN release
 
-- **T3/Wheat (`Wheat_div`)**: redistribution terms for T3/Wheat
-  (Triticeae Toolbox) public data have not been confirmed. Get an explicit
-  answer from T3/Wheat before shipping this dataset's release asset
-  publicly, or drop it from the catalog if redistribution is not allowed.
-- **SoyBase (`SoySNP50K_div`)**: likewise confirm SoyBase's redistribution
-  terms for the SoySNP50K diversity HapMap before a CRAN release; the
-  license field is deliberately left as "cite" rather than a specific
-  license identifier until this is confirmed.
+- **T3/Wheat (`Wheat_div`)**: public data under the Toronto Statement (cite
+  the data source and T3; respect the producers' right to publish first
+  analyses); USDA catalogs label it public domain and the same files are on
+  GrainGenes. No formal license text exists. Optionally ask the T3 curators
+  to confirm redistribution in writing.
+- **SoyBase (`SoySNP50K_div`)**: U.S. public domain (USDA catalog label);
+  cite the papers and write "SoyBase" with its URL.
 - The `data-v2` panels are CC0-1.0 or CC-BY-4.0 (`Sugarcane_div` is a US
   Government work, public domain) and clear to redistribute with
   attribution.

@@ -82,7 +82,7 @@ datasets <- list(
     panel = "USDA Soybean Germplasm Collection diversity subset, SoySNP50K iSelect BeadChip",
     ploidy = "diploid",
     mating = "inbred",
-    license = "Public USDA/SoyBase data (cite)",
+    license = "U.S. public domain (USDA SoyBase; cite)",
     source = "SoyBase, glyma.Wm82.gnm2.div.Song_Hyten_2015.hmp.gz (HapMap)",
     source_doi = "",
     source_url = "https://data.soybase.org/Glycine/max/diversity/Wm82.gnm2.div.Song_Hyten_2015/",
@@ -292,7 +292,7 @@ datasets <- list(
     panel = "Tetraploid wheat Global Collection (TGC), 90K iSelect SNP array",
     ploidy = "allotetraploid (AABB, disomic; coded per subgenome)",
     mating = "inbred",
-    license = "T3/Wheat public data (cite; terms to confirm)",
+    license = "Public data, T3/Wheat Toronto Statement (cite T3 and the data source)",
     source = "T3/Wheat (Triticeae Toolbox), ..._TGC-GTC_collection_SNP90K_mapped_filtered.vcf",
     source_doi = "",
     source_url = "",
@@ -311,7 +311,7 @@ datasets <- list(
         key = "t3wheat_tgc",
         title = "Tetraploid wheat Global Collection (TGC), SNP90K genotypes",
         author = person(family = "Triticeae Toolbox (T3/Wheat)"), year = 2020,
-        note = "T3/Wheat public data; redistribution terms to confirm")
+        note = "T3/Wheat public data under the Toronto Statement; also public on GrainGenes")
     )
   ),
   list(

@@ -17,7 +17,8 @@
 #     future improvement targets", Nature Genetics 51:885-895,
 #     doi:10.1038/s41588-019-0381-3   (reference per USDA GrainGenes,
 #     "Global Durum Genomic Resources").
-# License: T3/Wheat public data; cite the paper above. Redistribution terms
+# License: T3/Wheat public data (Toronto Statement: cite the data source and T3;
+# USDA catalog label: public domain). Redistribution terms
 # have not been confirmed with T3/Wheat -- see data-raw/README.md.
 #
 # The VCF (## meta, then a #CHROM header + one row per SNP) is recoded to -1/0/1
