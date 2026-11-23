@@ -32,7 +32,8 @@ marker_cache_dir <- function() {
 #' the local cache directory.
 #'
 #' @param names `character()` vector of data set names to clear, or `NULL`
-#'   (the default) to clear every remote data set present in the catalog.
+#'   (the default) to clear every data set with a hosted whole panel.
+#'   Sample-only data sets have no cached file; naming one warns.
 #' @param cache `character(1)` cache directory to clear from. Defaults to
 #'   [marker_cache_dir()].
 #' @return Invisibly, a `character()` vector of the file paths that were
@@ -43,8 +44,15 @@ marker_cache_dir <- function() {
 #' @export
 marker_cache_clear <- function(names = NULL, cache = marker_cache_dir()) {
   cat <- .catalog()
-  remote <- cat[!cat$bundled, , drop = FALSE]
+  remote <- cat[.is_hosted(cat), , drop = FALSE]
   if (!is.null(names)) {
+    sample_only <- cat[!cat$bundled & !.is_hosted(cat), , drop = FALSE]
+    for (nm in intersect(names, sample_only$name)) {
+      warning(sprintf("'%s' is a sample-only data set: no whole panel is cached, nothing to clear.", nm),
+        call. = FALSE
+      )
+    }
+    names <- setdiff(names, sample_only$name)
     unknown <- setdiff(names, remote$name)
     if (length(unknown)) {
       stop(sprintf(

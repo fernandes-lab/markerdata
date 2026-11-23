@@ -17,6 +17,10 @@ data-raw/
                              format and stages it under data-raw/release/,
                              then fills in catalog.csv's file/release/bytes/md5
   <species>_<source>.R      one build script per dataset (see below)
+  s1database_panels.R       builds the sample-only Arabidopsis_div and Human_div
+  thin.R                    the shared thinning rule (sourced by samples.R and
+                             s1database_panels.R)
+  samples.R                 thins every built panel to the in-package sample
   README.md                 this file
 
   <species>/                raw input files for one build script, e.g.
@@ -52,12 +56,43 @@ them locally when you need them.
 | `Cattle_div`             | `dryad_cattle_decker.R`         |
 | `Poplar_div`             | `dryad_poplar_geraldes.R`       |
 | `Wheat_div`              | `t3_wheat_tgc.R`                |
-| `WheatHex_div` (not yet released) | `dryad_wheat_zhanggao.R` |
+| `Arabidopsis_div` (sample only) | `s1database_panels.R` |
+| `Human_div` (sample only)        | `s1database_panels.R` |
+| `SugarBeet_div` (data-v2) | `zenodo_sugarbeet_chu.R`        |
+| `Tomato_div` (data-v2)    | `mendeley_tomato_51k.R`         |
+| `WheatHex_div` (data-v2)  | `dryad_wheat_zhanggao.R`        |
+| `Salmon_div` (data-v2)    | `dryad_salmon_kijas.R`          |
+| `Sheep_div` (data-v2)     | `dryad_sheep_ciani.R`           |
+| `Potato_div` (data-v2)    | `dryad_potato_endelman.R`       |
+| `Sugarcane_div` (data-v2) | `usda_sugarcane_ratoon.R`       |
 
-`WheatHex_div` is a second, hexaploid bread-wheat option kept alongside the
-tetraploid `Wheat_div` panel. It builds successfully but has no entry in
-`inst/extdata/catalog.csv` yet and is not downloadable with `marker_data()`
--- add a `catalog.R` entry and run `release.R` for it once it is ready.
+Raw-only scripts with no data set yet (see `TODO.md`): `figshare_chicken_li.R`.
+
+The catalog (`inst/extdata/catalog.csv`) has three kinds of rows: the bundled
+maize panel, hosted panels (sample in the package, whole panel in a GitHub
+release: tag `data-v1` for the first seven, `data-v2` for the seven added
+later) and two **sample-only** data sets. `Arabidopsis_div` and `Human_div` are built by
+`s1database_panels.R` from the processed pilot panels of the s1database
+project (`data-panels/<panel>/pilot-v1/`: `variants.tsv`,
+`dosages.simulation.tsv.gz`), thinned with the same rule as the other samples
+(`thin.R`, shared with `samples.R`). markerdata hosts no whole panel for
+them: their catalog rows have no `file`/`release`/`bytes`/`md5`, `source_url`
+holds the original download, and `n_snp`/`n_ind`/`het` describe the sample
+(computed by `catalog.R` from `inst/extdata/samples/<name>.rds`, since there
+is no built `.rda`). `release.R` skips them. `source_url` is filled for every
+row (empty for the maize and T3/Wheat rows, where no URL is on record).
+
+`WheatHex_div` is the hexaploid bread-wheat panel, kept alongside the
+tetraploid `Wheat_div` panel.
+
+Two panels are not what they look like, and their help topics say so:
+`Potato_div` is an autotetraploid stored **diploidized** (dosage lost), and
+`Sugarcane_div` holds the diploid-style calls of its source (no dosage ever
+existed) at *Sorghum bicolor* positions.
+
+Each hosted row names its own release tag (`release` field in `catalog.R`).
+`release.R` packs only rows that still have no checksum and never re-tags or
+re-packs the others, so the published `data-v1` assets stay valid.
 
 ## Raw inputs
 
@@ -122,27 +157,46 @@ released dataset (asserted by `release.R`).
    `R/sysdata.rda` from the current metadata and the objects in
    `data-raw/built/`.
 2. Build (or rebuild) whichever datasets changed, as above.
-3. `Rscript data-raw/release.R` -- for every non-bundled catalog row with a
-   built `.rda`, validate it (`.check_marker()`), pack it (`.pack()`),
+3. `Rscript data-raw/release.R` -- for every hosted catalog row with a
+   built `.rda` and no checksum yet, validate it (`.check_marker()`), pack it (`.pack()`),
    round-trip-check it (`identical(.unpack(p), x)`), write
    `data-raw/release/<name>.rds`, and fill in that row's `file`, `release`,
-   `bytes` and `md5` in `inst/extdata/catalog.csv`. Rows with no built
-   `.rda` are reported and left unchanged.
-4. Publish the packed assets as a GitHub release (first time):
+   `bytes` and `md5` in `inst/extdata/catalog.csv`. Rows that already have a
+   checksum are skipped (set `FORCE <- TRUE` at the top of the script to
+   re-pack everything); rows with no built `.rda` are reported and left
+   unchanged.
+4. `Rscript data-raw/samples.R` (and `Rscript data-raw/s1database_panels.R`
+   for the two sample-only data sets) -- rebuild the samples shipped inside the
+   package (`inst/extdata/samples/<name>.rds`, 2,000 SNPs for
+   every individual, tracked in git) from the same built `.rda` files. These are
+   what `marker_data("<name>")` returns without `full = TRUE`.
+5. Publish the packed assets, one release per tag, listing that tag's files
+   (never `data-raw/release/*.rds`, which mixes tags). `data-v1` (first seven
+   panels, already published):
 
    ```sh
    gh release create data-v1 --title "markerdata data v1" \
      --notes "Packed marker panels for markerdata 0.1.0" \
-     data-raw/release/*.rds
+     data-raw/release/{SoySNP50K,EUChip60K,Sorghum,Rice,Cattle,Poplar,Wheat}_div.rds
    ```
 
-   or update an existing release with newly packed assets:
+   `data-v2` (seven panels, NOT published yet; do this before the next
+   package release):
 
    ```sh
-   gh release upload data-v1 data-raw/release/*.rds --clobber
+   gh release create data-v2 --title "markerdata data v2" \
+     --notes "Packed marker panels for markerdata 0.1.0 (sugar beet, tomato, hexaploid wheat, Atlantic salmon, sheep, potato, sugarcane)" \
+     data-raw/release/SugarBeet_div.rds data-raw/release/Tomato_div.rds \
+     data-raw/release/WheatHex_div.rds data-raw/release/Salmon_div.rds \
+     data-raw/release/Sheep_div.rds data-raw/release/Potato_div.rds \
+     data-raw/release/Sugarcane_div.rds
    ```
 
-5. Commit the updated `inst/extdata/catalog.csv` (and `R/sysdata.rda` if
+   Until `data-v2` exists, `marker_data(name, full = TRUE)` for these seven
+   warns and returns `NULL` (the sample still works). To add or replace
+   assets in an existing tag, use `gh release upload <tag> <files> --clobber`.
+
+6. Commit the updated `inst/extdata/catalog.csv` (and `R/sysdata.rda` if
    references changed). Do not commit `data-raw/built/` or
    `data-raw/release/` -- they are gitignored and reproducible from the
    scripts above.
@@ -157,6 +211,9 @@ released dataset (asserted by `release.R`).
   terms for the SoySNP50K diversity HapMap before a CRAN release; the
   license field is deliberately left as "cite" rather than a specific
   license identifier until this is confirmed.
+- The `data-v2` panels are CC0-1.0 or CC-BY-4.0 (`Sugarcane_div` is a US
+  Government work, public domain) and clear to redistribute with
+  attribution.
 - All other datasets (`EUChip60K_div`, `Sorghum_div`, `Rice_div`,
   `Cattle_div`, `Poplar_div`) are CC0 or CC-BY-4.0 and already clear to
   redistribute with attribution.

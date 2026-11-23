@@ -20,10 +20,12 @@ A poplar marker matrix in the same numeric format as
 \link{SNP55K_maize282_maf04}, curated from a \emph{Populus trichocarpa}
 landscape-genomics panel genotyped on the PoplarConsortium-ORNL 34K SNP
 array (Geraldes et al. 2014): 434 accessions and 12,000 SNPs (MAF >=
-0.05 in the subset). This dataset is \strong{not} shipped inside the
-markerdata package; it is downloaded on first use with
-\code{marker_data("Poplar_div")} (a packed, xz-compressed download of about
-1 MB) and cached locally afterward.
+0.05 in the subset). The package ships a
+sample of 2,000 SNPs and every individual, returned by
+\code{marker_data("Poplar_div")}; the whole panel described here is downloaded
+on first use with \code{marker_data("Poplar_div", full = TRUE)} (a packed,
+xz-compressed download of about 1 MB) and cached locally afterward (see
+\code{\link[=marker_cache_dir]{marker_cache_dir()}}).
 }
 \details{
 Genotypes are coded \code{-1}/\code{0}/\code{1}. These forest trees are \strong{outbred}
@@ -34,8 +36,9 @@ The genetic-map column \code{cm} is a synthetic map built from physical
 positions with \code{simplePHENOTYPES::synthetic_map()}.
 }
 \examples{
+dim(marker_data("Poplar_div")) # bundled sample
 \donttest{
-geno <- marker_data("Poplar_div")
+geno <- marker_data("Poplar_div", full = TRUE) # whole panel (download)
 if (!is.null(geno)) dim(geno)
 }
 }
@@ -52,12 +55,21 @@ array for \emph{Populus trichocarpa}. \emph{Molecular Ecology Resources}
 \code{\link[=marker_data]{marker_data()}}, \code{\link[=marker_catalog]{marker_catalog()}}, \code{\link[=marker_references]{marker_references()}}
 
 Other marker datasets:
+\code{\link{Arabidopsis_div}},
 \code{\link{Cattle_div}},
 \code{\link{EUChip60K_div}},
+\code{\link{Human_div}},
+\code{\link{Potato_div}},
 \code{\link{Rice_div}},
 \code{\link{SNP55K_maize282_maf04}},
+\code{\link{Salmon_div}},
+\code{\link{Sheep_div}},
 \code{\link{Sorghum_div}},
 \code{\link{SoySNP50K_div}},
+\code{\link{SugarBeet_div}},
+\code{\link{Sugarcane_div}},
+\code{\link{Tomato_div}},
+\code{\link{WheatHex_div}},
 \code{\link{Wheat_div}}
 }
 \concept{marker datasets}

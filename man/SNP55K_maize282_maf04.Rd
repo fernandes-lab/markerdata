@@ -23,10 +23,10 @@ the Illumina MaizeSNP50 (55K) array and filtered to SNPs with
 minor-allele frequency (MAF) greater than 0.4 to keep the bundled file
 small: 10,650 SNPs by 280 inbred lines. Genotypes are coded \code{-1}/\code{0}/\code{1}
 (reference homozygote / heterozygote / alternate homozygote). This is
-the only dataset actually bundled with markerdata; the seven larger
-panels documented elsewhere in this package (\link{SoySNP50K_div},
-\link{EUChip60K_div}, \link{Sorghum_div}, \link{Rice_div}, \link{Cattle_div}, \link{Poplar_div},
-\link{Wheat_div}) are downloaded on first use with \code{\link[=marker_data]{marker_data()}}.
+the only dataset actually bundled whole with markerdata; every other
+data set in the package (see \code{\link[=marker_catalog]{marker_catalog()}}) ships a sample, and all
+but \link{Arabidopsis_div} and \link{Human_div}, which are samples only, can be
+downloaded whole on request with \code{\link[=marker_data]{marker_data()}}.
 }
 \section{Columns}{
 
@@ -64,12 +64,21 @@ panels. \emph{Plant Physiology} 158(2):824-834. \doi{10.1104/pp.111.185033}
 }
 \seealso{
 Other marker datasets:
+\code{\link{Arabidopsis_div}},
 \code{\link{Cattle_div}},
 \code{\link{EUChip60K_div}},
+\code{\link{Human_div}},
 \code{\link{Poplar_div}},
+\code{\link{Potato_div}},
 \code{\link{Rice_div}},
+\code{\link{Salmon_div}},
+\code{\link{Sheep_div}},
 \code{\link{Sorghum_div}},
 \code{\link{SoySNP50K_div}},
+\code{\link{SugarBeet_div}},
+\code{\link{Sugarcane_div}},
+\code{\link{Tomato_div}},
+\code{\link{WheatHex_div}},
 \code{\link{Wheat_div}}
 }
 \concept{marker datasets}

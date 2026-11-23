@@ -15,18 +15,22 @@ knitr::opts_chunk$set(
 [![R-CMD-check](https://github.com/fernandes-lab/markerdata/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/fernandes-lab/markerdata/actions/workflows/R-CMD-check.yaml)
 
 markerdata provides curated single-nucleotide polymorphism (SNP) marker
-panels drawn from public genomic resources across several species (maize,
-soybean, eucalyptus, sorghum, rice, cattle, poplar, wheat). Each panel is a
+panels drawn from public genomic resources across crops, trees, livestock,
+fish and two sample-only reference species (the table below lists every
+data set and species). Each panel is a
 plain data frame with five marker-metadata columns (`snp`, `allele`, `chr`,
 `pos`, `cm`) followed by one `-1`/`0`/`1` genotype column per individual, so
 it can be used directly as founder genotypes for breeding-program simulation
 with `simplePHENOTYPES::as_population()` or with breedingDesigner.
 
-One small maize panel is bundled with the package and loads instantly; the
-other seven panels are downloaded on first use with `marker_data()` and
-cached locally, so later calls are instant too. Altogether the seven
-downloadable panels total about 7.5 MB, and none of them bloat the installed
-package.
+Every data set works offline. One small maize panel is bundled whole; each
+of the other data sets ships a sample (2,000 SNPs, every individual; 1,000 SNPs for the four largest)
+that loads instantly. For all but two of them, `marker_data(name, full = TRUE)`
+downloads the whole panel on first use and caches it locally, and
+`marker_download()` fetches every hosted whole panel at once (about 19 MB).
+`Arabidopsis_div` (1001 Genomes) and `Human_div` (1000 Genomes Project) are
+**sample only**: markerdata does not host their whole data sets, and
+`marker_catalog()$source_url` gives the original download.
 
 ## Installation
 
@@ -51,13 +55,23 @@ The bundled maize panel loads without any download:
 head(marker_data("SNP55K_maize282_maf04")[, 1:8])
 ```
 
-A remote panel is downloaded on first use and cached afterward. Its
-`-1`/`0`/`1` genotype coding is exactly what
+Every other panel returns its bundled sample by default, also without any
+download:
+
+```{r}
+dim(marker_data("Cattle_div"))
+```
+
+Ask for the whole panel with `full = TRUE`; it is downloaded on first use
+and cached afterward. To download every whole panel in one go, call
+`marker_download()`. The `-1`/`0`/`1` genotype coding is exactly what
 `simplePHENOTYPES::as_population()` expects for founder genotypes:
 
 ```{r, eval = FALSE}
-geno <- marker_data("Cattle_div")
+geno <- marker_data("Cattle_div", full = TRUE)
 pop <- simplePHENOTYPES::as_population(geno, individuals = 1:100)
+
+marker_download() # every hosted whole panel
 ```
 
 ## Data sets
@@ -65,8 +79,10 @@ pop <- simplePHENOTYPES::as_population(geno, individuals = 1:100)
 ```{r, echo = FALSE}
 cat <- marker_catalog()
 
-fmt_download <- function(bytes, bundled) {
-  ifelse(bundled, "bundled", sprintf("%.1f MB", bytes / 1e6))
+fmt_download <- function(bytes, bundled, url) {
+  ifelse(bundled, "bundled",
+    ifelse(is.na(bytes), sprintf("sample only; [original data](%s)", url),
+      sprintf("%.1f MB", bytes / 1e6)))
 }
 
 link_dois <- function(reference, doi) {
@@ -94,16 +110,32 @@ tbl <- data.frame(
   `Heterozygous calls` = sprintf("%.1f%%", cat$het * 100),
   Mating = cat$mating,
   License = cat$license,
-  Download = fmt_download(cat$bytes, cat$bundled),
+  `Full download` = fmt_download(cat$bytes, cat$bundled, cat$source_url),
   Reference = mapply(link_dois, cat$reference, cat$doi),
   check.names = FALSE, stringsAsFactors = FALSE
 )
 knitr::kable(tbl, row.names = FALSE)
 ```
 
+Sizes are those of the whole panels, except for `Arabidopsis_div` and
+`Human_div`, where the counts describe the sample because the whole data
+set is not hosted (follow the link in the last-but-one column). The human data
+are from publicly released, consented 1000 Genomes samples and are included
+for method development and teaching. The bundled sample of each panel
+is 2,000 SNPs (1,000 for `SoySNP50K_div`, `Cattle_div`, `Wheat_div` and `SugarBeet_div`, to keep the package small) and every individual of the panel: SNPs
+evenly spaced over those polymorphic among the individuals.
+
+Two data sets need care. `Potato_div` is an autotetraploid stored
+**diploidized** (dosage 0 becomes `-1`, dosage 4 becomes `1`, dosages 1 to 3
+become `0`), so its allele dosage is lost; `Sugarcane_div` holds the
+diploid-style calls of its source (no dosage exists) at *Sorghum bicolor*
+positions. Their help topics explain what is lost. Whole panels are hosted in
+the GitHub releases `data-v1` and `data-v2` (the `release` column of
+`marker_catalog()` says which).
+
 ## Cache
 
-Downloaded data sets are cached under `marker_cache_dir()`, which resolves
+Downloaded whole panels are cached under `marker_cache_dir()`, which resolves
 (in order) `getOption("markerdata.cache")`, the environment variable
 `MARKERDATA_CACHE`, or else `tools::R_user_dir("markerdata", "cache")`. Use
 `marker_download()` to fetch one or more data sets ahead of time (for

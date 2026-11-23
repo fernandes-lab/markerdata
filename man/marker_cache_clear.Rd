@@ -8,7 +8,8 @@ marker_cache_clear(names = NULL, cache = marker_cache_dir())
 }
 \arguments{
 \item{names}{\code{character()} vector of data set names to clear, or \code{NULL}
-(the default) to clear every remote data set present in the catalog.}
+(the default) to clear every data set with a hosted whole panel.
+Sample-only data sets have no cached file; naming one warns.}
 
 \item{cache}{\code{character(1)} cache directory to clear from. Defaults to
 \code{\link[=marker_cache_dir]{marker_cache_dir()}}.}

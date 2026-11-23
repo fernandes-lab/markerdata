@@ -99,32 +99,54 @@
 
 #' Get a marker data set
 #'
-#' Returns a marker data set as a `data.frame`. The one bundled data set
-#' (`SNP55K_maize282_maf04`) loads instantly; every other data set is
-#' downloaded from the package's GitHub release on first use and cached
-#' locally (see [marker_cache_dir()]) so later calls are instant too.
+#' Returns a marker data set as a `data.frame`. Every data set is available
+#' offline: the maize panel (`SNP55K_maize282_maf04`) is bundled whole, and
+#' each of the other data sets ships a sample (2,000 SNPs, every individual)
+#' inside the package. Ask for the whole panel with `full = TRUE`; it is
+#' downloaded from the package's GitHub releases on first use and cached
+#' locally (see [marker_cache_dir()]) so later calls are instant.
+#'
+#' @section The sample:
+#' A sample is a fixed thinning of the full panel, built by
+#' `data-raw/samples.R` without random numbers: every individual of the
+#' panel, and 2,000 SNPs (1,000 for the four largest panels) evenly spaced over those that are polymorphic among
+#' them. It has the same columns and coding as the
+#' full panel and is meant for examples, tests and quick simulations; use
+#' `full = TRUE` for real studies.
 #'
 #' @param name `character(1)` data set name; must be one of
 #'   `marker_catalog()$name`.
-#' @param cache `character(1)` cache directory for remote data sets.
+#' @param full `logical(1)`: if `FALSE` (the default), return the sample
+#'   shipped with the package; if `TRUE`, return the whole panel,
+#'   downloading it when it is not cached yet. Ignored for
+#'   `SNP55K_maize282_maf04`, which is bundled whole. For the sample-only
+#'   data sets (`Arabidopsis_div`, `Human_div`), markerdata hosts no whole
+#'   panel: `full = TRUE` warns, gives the `source_url` of the original
+#'   data and returns `NULL`; nothing is downloaded. Use
+#'   [marker_download()] to fetch every full panel at once.
+#' @param cache `character(1)` cache directory for full panels.
 #'   Defaults to [marker_cache_dir()].
-#' @param download `logical(1)`: if `FALSE`, never download -- only return
-#'   the data set if it is bundled or already cached.
+#' @param download `logical(1)`: if `FALSE`, never download -- with
+#'   `full = TRUE`, only return the panel if it is already cached.
 #' @param quiet `logical(1)`: if `FALSE` (the default), print a message
-#'   when a download happens.
+#'   when a sample is returned or a download happens.
 #' @return The requested marker `data.frame`, or (invisibly) `NULL` with a
-#'   `warning()` if the data set could not be obtained (for example, no
-#'   network connection).
+#'   `warning()` if a full panel could not be obtained (for example, no
+#'   network connection, or a sample-only data set with `full = TRUE`).
 #' @examples
 #' head(marker_data("SNP55K_maize282_maf04")[, 1:8])
 #'
+#' # the sample shipped with the package: no download
+#' dim(marker_data("Rice_div"))
+#'
 #' \donttest{
-#' geno <- marker_data("Rice_div")
+#' # the whole panel: downloaded on first use, then cached
+#' geno <- marker_data("Rice_div", full = TRUE)
 #' if (!is.null(geno)) dim(geno)
 #' }
 #' @export
-marker_data <- function(name, cache = marker_cache_dir(), download = TRUE,
-                         quiet = FALSE) {
+marker_data <- function(name, full = FALSE, cache = marker_cache_dir(),
+                         download = TRUE, quiet = FALSE) {
   if (!is.character(name) || length(name) != 1L || is.na(name)) {
     stop("`name` must be a single string.", call. = FALSE)
   }
@@ -141,6 +163,34 @@ marker_data <- function(name, cache = marker_cache_dir(), download = TRUE,
     e <- new.env()
     utils::data(list = name, package = "markerdata", envir = e)
     return(get(name, envir = e))
+  }
+
+  hosted <- .is_hosted(entry)
+  # A catalog entry without a shipped sample falls through to the full panel.
+  smp <- system.file("extdata", "samples", paste0(name, ".rds"),
+    package = "markerdata"
+  )
+  if (!isTRUE(full) && nzchar(smp)) {
+    x <- .unpack(readRDS(smp))
+    if (!quiet) {
+      message(if (hosted) {
+        sprintf(
+          "'%s': returning the bundled sample (%d SNPs x %d individuals of %d x %d). Use full = TRUE for the whole panel.",
+          name, nrow(x), ncol(x) - 5L, entry$n_snp, entry$n_ind
+        )
+      } else {
+        sprintf(
+          "'%s': returning the bundled sample (%d SNPs x %d individuals); the whole data set is at %s.",
+          name, nrow(x), ncol(x) - 5L, entry$source_url
+        )
+      })
+    }
+    return(x)
+  }
+
+  if (!hosted) {
+    .warn_not_hosted(entry)
+    return(invisible(NULL))
   }
 
   dest <- file.path(cache, entry$file)
@@ -160,7 +210,7 @@ marker_data <- function(name, cache = marker_cache_dir(), download = TRUE,
   if (!file.exists(dest)) {
     if (!download) {
       warning(sprintf(
-        "'%s' is not cached at '%s'. Use marker_download('%s') or marker_data('%s', download = TRUE) to fetch it.",
+        "'%s' is not cached at '%s'. Use marker_download('%s') or marker_data('%s', full = TRUE, download = TRUE) to fetch it.",
         name, cache, name, name
       ), call. = FALSE)
       return(invisible(NULL))
@@ -189,13 +239,17 @@ marker_data <- function(name, cache = marker_cache_dir(), download = TRUE,
 
 #' Download marker data sets into the local cache
 #'
-#' Downloads one or more remote marker data sets so subsequent
-#' [marker_data()] calls are served from the local cache without network
-#' access.
+#' Downloads one or more full marker panels so subsequent
+#' `marker_data(name, full = TRUE)` calls are served from the local cache
+#' without network access. Called with no arguments, it downloads every
+#' full panel (roughly 19 MB in total; the `bytes` column of
+#' [marker_catalog()] gives each size).
 #'
 #' @param names `character()` vector of data set names to download, or
-#'   `NULL` (the default) for every remote (non-bundled) data set in the
-#'   catalog.
+#'   `NULL` (the default) for every data set whose whole panel markerdata
+#'   hosts. The sample-only data sets (`Arabidopsis_div`, `Human_div`) are
+#'   skipped silently then; asking for one by name gives a warning with
+#'   its `source_url`, and its entry in the result is `FALSE`.
 #' @param cache `character(1)` cache directory. Defaults to
 #'   [marker_cache_dir()].
 #' @param overwrite `logical(1)`: if `TRUE`, re-download files already
@@ -213,11 +267,12 @@ marker_data <- function(name, cache = marker_cache_dir(), download = TRUE,
 marker_download <- function(names = NULL, cache = marker_cache_dir(),
                              overwrite = FALSE, quiet = FALSE) {
   cat <- marker_catalog(cache = cache)
-  remote <- cat[!cat$bundled, , drop = FALSE]
+  remote <- cat[.is_hosted(cat), , drop = FALSE]
+  sample_only <- cat[!cat$bundled & !.is_hosted(cat), , drop = FALSE]
   if (is.null(names)) {
     names <- remote$name
   } else {
-    unknown <- setdiff(names, remote$name)
+    unknown <- setdiff(names, c(remote$name, sample_only$name))
     if (length(unknown)) {
       stop(sprintf(
         "Unknown or non-remote data set(s): %s. Valid remote names: %s",
@@ -230,6 +285,10 @@ marker_download <- function(names = NULL, cache = marker_cache_dir(),
   result <- logical(length(names))
   names(result) <- names
   for (nm in names) {
+    if (nm %in% sample_only$name) { # no whole panel is hosted: nothing to fetch
+      .warn_not_hosted(sample_only[sample_only$name == nm, , drop = FALSE][1, ])
+      next
+    }
     entry <- remote[remote$name == nm, , drop = FALSE][1, ]
     dest <- file.path(cache, entry$file)
     if (file.exists(dest) && !overwrite) {

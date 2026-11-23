@@ -28,15 +28,23 @@ genotype column per individual, coded `-1`/`0`/`1` (reference homozygote /
 heterozygote / alternate homozygote).
 
 One small maize panel (`SNP55K_maize282_maf04`) is bundled with the package
-and loads instantly. Seven larger panels (soybean, eucalyptus, sorghum,
-rice, cattle, poplar, wheat) are downloaded on first use with
-`marker_data()` and cached locally, so they do not bloat the installed
-package.
+and loads instantly. Every other data set (crops, trees, cattle, sheep,
+Atlantic salmon, and more; the catalog below lists them all) ships a sample
+of 2,000 SNPs (1,000 for the four largest) for every individual that also loads instantly. For the
+hosted panels, the whole panel is downloaded on first use with
+`marker_data(name, full = TRUE)` and cached locally, so it does not bloat the
+installed package. `Arabidopsis_div` (1001 Genomes) and `Human_div`
+(1000 Genomes Project) are sample only: markerdata does not host their whole
+data sets, and the `source_url` column of the catalog gives the original
+download. The human data are from publicly released, consented 1000 Genomes
+samples and are included for method development and teaching.
 
 ## The catalog
 
-`marker_catalog()` lists every data set and whether it is already available
-on this machine (bundled, or already downloaded and cached):
+`marker_catalog()` lists every data set, with the size of the whole panel
+(of the sample, for the two sample-only data sets),
+and whether the whole panel is already available on this machine (bundled,
+or already downloaded and cached):
 
 ```{r}
 cat <- marker_catalog()
@@ -71,14 +79,46 @@ any published maize linkage map, but it gives meiosis-based simulation
 functions (crossing, selfing, doubled haploids) usable recombination
 distances on this example data.
 
-## Getting a remote data set
+## Samples of the other panels
 
-The other seven panels are not bundled; the first call to `marker_data()`
-downloads and caches the requested one, and later calls are served from the
-cache without any network access.
+For every other data set, `marker_data()` returns the sample shipped with
+the package. No download is needed:
+
+```{r}
+smp <- marker_data("Rice_div")
+dim(smp)
+```
+
+A sample is a fixed thinning of the whole panel: every individual, and 2,000
+SNPs (1,000 for `SoySNP50K_div`, `Cattle_div`, `Wheat_div` and `SugarBeet_div`, to keep the package small) evenly spaced over those that are polymorphic among them. It has the same columns and coding as the whole
+panel. Use it for examples, tests and quick simulations, and the whole
+panel for real studies. For `Arabidopsis_div` and `Human_div` the sample is
+all that markerdata ships; `full = TRUE` warns, gives the `source_url` of the
+original data and returns `NULL` without downloading anything:
+
+```{r}
+marker_catalog()[marker_catalog()$name %in% c("Arabidopsis_div", "Human_div"),
+                 c("name", "n_snp", "n_ind", "source_url")]
+```
+
+## Polyploid crops
+
+Two data sets come from polyploid crops, and the `-1`/`0`/`1` format cannot
+hold allele dosage. `Potato_div` (autotetraploid) stores the source's dosages
+0 to 4 as `-1` (dosage 0), `1` (dosage 4) and `0` (dosages 1 to 3), so about
+69% of its calls are `0` and the dosage of the mixed genotypes is lost.
+`Sugarcane_div` holds the diploid-style calls (`0/0`, `0/1`, `1/1`) that its
+source reports, so it never had dosage, and its positions are *Sorghum
+bicolor* coordinates. Read the help topics (`?Potato_div`, `?Sugarcane_div`)
+before using them.
+
+## Getting a whole panel
+
+`full = TRUE` returns the whole panel. The first call downloads and caches
+it, and later calls are served from the cache without any network access.
 
 ```{r, eval = FALSE}
-geno <- marker_data("Rice_div")
+geno <- marker_data("Rice_div", full = TRUE)
 ```
 
 On first use, this downloads a small, packed file to `marker_cache_dir()`
@@ -89,11 +129,12 @@ regular data frame. Subsequent calls with the same cache reuse the cached
 file instantly. If the download fails (for example, no network connection),
 `marker_data()` warns and returns `NULL` rather than raising an error.
 
-Use `marker_download()` to fetch one or more data sets ahead of time, for
-example before going offline:
+Use `marker_download()` to fetch whole panels ahead of time, for example
+before going offline. With no arguments it downloads every hosted panel (the sample-only data sets are skipped):
 
 ```{r, eval = FALSE}
 marker_download(c("Rice_div", "Cattle_div"))
+marker_download() # every whole panel
 ```
 
 and `marker_cache_clear()` to remove cached files again:
@@ -108,7 +149,7 @@ Every marker data frame in this package is ready to use as founder
 genotypes with `simplePHENOTYPES::as_population()`:
 
 ```{r, eval = FALSE}
-geno <- marker_data("Cattle_div")
+geno <- marker_data("Cattle_div", full = TRUE)
 pop <- simplePHENOTYPES::as_population(geno, individuals = 1:100)
 ```
 

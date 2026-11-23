@@ -16,7 +16,13 @@
 # This script does NOT upload anything itself -- it prints the exact `gh`
 # commands to run afterward (see the end of this script / its console output).
 
-RELEASE <- "data-v1"
+# Each hosted catalog row names its own release tag (the `release` column,
+# set in data-raw/catalog.R). A row that already has a file/release/bytes/md5
+# is left as it is -- never re-packed and never re-tagged -- so the published
+# assets of an earlier tag stay valid. Only rows still missing a checksum are
+# packed, into data-raw/release/<name>.rds. Set FORCE <- TRUE to re-pack all.
+FORCE <- FALSE
+DEFAULT_RELEASE <- "data-v1" # used only for a row whose release is empty
 
 suppressMessages(pkgload::load_all(".", quiet = TRUE))
 
@@ -36,8 +42,10 @@ missing_ <- character()
 
 for (i in seq_len(nrow(catalog))) {
   if (isTRUE(catalog$bundled[i])) next  # bundled datasets are not released as assets
+  if (is.na(catalog$file[i])) next      # sample-only datasets (no hosted file): nothing to release
 
   name <- catalog$name[i]
+  if (!FORCE && !is.na(catalog$md5[i]) && nzchar(catalog$md5[i])) next # already released
   rda  <- file.path("data-raw", "built", paste0(name, ".rda"))
   if (!file.exists(rda)) {
     missing_ <- c(missing_, name)
@@ -61,7 +69,7 @@ for (i in seq_len(nrow(catalog))) {
   md5   <- unname(tools::md5sum(out_rds))
 
   catalog$file[i]    <- paste0(name, ".rds")
-  catalog$release[i] <- RELEASE
+  if (is.na(catalog$release[i]) || !nzchar(catalog$release[i])) catalog$release[i] <- DEFAULT_RELEASE
   catalog$bytes[i]   <- as.character(bytes)
   catalog$md5[i]     <- md5
 
@@ -81,17 +89,22 @@ if (nrow(packed)) {
              sum(packed$bytes) / 1024^2, nrow(packed),
              if (nrow(packed) != 1L) "s" else ""))
 } else {
-  cat("Nothing packed (no data-raw/built/<name>.rda files were found for the\n",
-     "non-bundled catalog rows).\n", sep = "")
+  cat("Nothing packed (every hosted row already has a checksum, or no\n",
+     "data-raw/built/<name>.rda was found).\n", sep = "")
 }
 if (length(missing_)) {
   cat("\nSkipped (no data-raw/built/<name>.rda found; catalog left unchanged):\n  ",
      paste(missing_, collapse = ", "), "\n", sep = "")
 }
 
-cat("\nTo publish this release (first time):\n")
-cat(sprintf(
-  '  gh release create %s --title "markerdata data v1" --notes "Packed marker panels for markerdata 0.1.0" data-raw/release/*.rds\n',
-  RELEASE))
-cat("\nTo update an existing release with newly packed assets:\n")
-cat(sprintf("  gh release upload %s data-raw/release/*.rds --clobber\n", RELEASE))
+# One `gh` command per release tag, listing only that tag's packed assets.
+for (tag in unique(catalog$release[catalog$name %in% packed$name])) {
+  files <- catalog$file[catalog$name %in% packed$name & catalog$release == tag]
+  cat(sprintf("\nTo publish release %s (first time):\n", tag))
+  cat(sprintf('  gh release create %s --title "markerdata %s" --notes "Packed marker panels for markerdata" %s\n',
+              tag, sub("^data-v", "data v", tag),
+              paste(file.path("data-raw/release", files), collapse = " ")))
+  cat(sprintf("To add or replace assets in an existing release %s:\n", tag))
+  cat(sprintf("  gh release upload %s %s --clobber\n", tag,
+              paste(file.path("data-raw/release", files), collapse = " ")))
+}

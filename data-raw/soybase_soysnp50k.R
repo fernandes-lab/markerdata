@@ -21,22 +21,30 @@
 # data-raw/README.md -- redistribution terms for this dataset are not yet
 # confirmed and should be checked before a CRAN release).
 #
-# The full HapMap is large, so this script (1) downloads it once and caches
-# it under data-raw/soybase_cache/, (2) keeps a manageable slice of
-# accessions (columns), (3) converts that slice to the numeric -1/0/1 format
-# with simplePHENOTYPES::as_numeric(from = "hapmap"), (4) adds a synthetic
-# genetic map (the SoyBase files carry no cM), (5) MAF-filters (>=0.05) and
-# thins evenly across chromosomes to a curated n_snps-SNP subset, and (6)
-# sanity-checks with as_population() and saves data-raw/built/SoySNP50K_div.rda.
+# The full HapMap is large (20,087 accessions x 42,509 SNPs), so this script
+# (1) downloads it once and caches it under data-raw/soybase_cache/, (2)
+# streams it in chunks of SNP rows (never holding the whole text), converting
+# each chunk to the numeric -1/0/1 format with
+# simplePHENOTYPES::as_numeric(from = "hapmap"), (3) drops SNPs with more than
+# MAX_MISS missing calls or MAF < 0.05 (computed on the observed calls), and
+# imputes the remaining missing calls to the major homozygote (the same rule
+# as data-raw/s1database_panels.R), (4) adds a synthetic genetic map (the
+# SoyBase files carry no cM), (5) thins evenly across chromosomes to a curated
+# n_snps-SNP subset, and (6) sanity-checks with as_population() and saves
+# data-raw/built/SoySNP50K_div.rda. ALL accessions are kept by default.
 #
-# Usage:  Rscript data-raw/soybase_soysnp50k.R [n_accessions] [n_snps] [out.rda]
-#   defaults: 300 accessions, 12000 SNPs -> data-raw/built/SoySNP50K_div.rda
+# Usage:  Rscript data-raw/soybase_soysnp50k.R [n_accessions|all] [n_snps] [out.rda]
+#   defaults: all accessions, 12000 SNPs -> data-raw/built/SoySNP50K_div.rda
+#   (a number keeps only the first n_accessions accessions)
 
 suppressMessages(library(simplePHENOTYPES))
 args   <- commandArgs(trailingOnly = TRUE)
-n_acc  <- if (length(args) >= 1) as.integer(args[[1]]) else 300L
+n_acc  <- if (length(args) >= 1 && args[[1]] != "all") as.integer(args[[1]]) else Inf
 n_snps <- if (length(args) >= 2) as.integer(args[[2]]) else 12000L
 out    <- if (length(args) >= 3) args[[3]] else "data-raw/built/SoySNP50K_div.rda"
+
+MAX_MISS <- 0.05  # drop SNPs missing in more than this fraction of accessions
+CHUNK    <- 2500L # SNP rows converted per step
 
 base <- "https://data.soybase.org/Glycine/max/diversity/Wm82.gnm2.div.Song_Hyten_2015"
 url  <- file.path(base, "glyma.Wm82.gnm2.div.Song_Hyten_2015.hmp.gz")
@@ -49,53 +57,70 @@ if (!file.exists(gz)) {
   utils::download.file(url, gz, mode = "wb")
 }
 
-# Keep the 11 HapMap metadata columns + the first n_acc accession columns, so
-# as_numeric() only converts a manageable slice. To pick specific PIs, replace the
-# `keep` column indices; to convert ALL 20,087 accessions, use the .gz directly.
-hmp_sub <- file.path(cache, sprintf("soysnp50k_%dacc.hmp.txt", n_acc))
-if (!file.exists(hmp_sub)) {
-  message("Subsetting to ", n_acc, " accessions ...")
-  con_in <- gzfile(gz, "rt")
-  hdr  <- strsplit(readLines(con_in, n = 1L), "\t", fixed = TRUE)[[1]]
-  keep <- c(1:11, 11L + seq_len(min(n_acc, length(hdr) - 11L)))
-  con_out <- file(hmp_sub, "wt")
-  writeLines(paste(hdr[keep], collapse = "\t"), con_out)
-  repeat {
-    ln <- readLines(con_in, n = 20000L)
-    if (!length(ln)) break
-    f <- strsplit(ln, "\t", fixed = TRUE)
-    writeLines(vapply(f, function(x) paste(x[keep], collapse = "\t"), character(1)),
-               con_out)
+# Stream the HapMap in chunks of CHUNK SNP rows. Each chunk is written as a small
+# HapMap file, converted by as_numeric() (-1/0/1, NA = missing call), filtered
+# and stored as a raw matrix (genotype + 1) so the whole panel stays in memory
+# at 1 byte per call. The map columns of every SNP are kept to build the
+# synthetic cM map on the full SNP set before thinning.
+con <- gzfile(gz, "rt")
+hdr <- strsplit(readLines(con, n = 1L), "\t", fixed = TRUE)[[1]]
+keep_col <- seq_len(min(length(hdr), 11L + n_acc)) # 11 HapMap metadata columns + accessions
+limited <- length(keep_col) < length(hdr)
+tmp <- tempfile(fileext = ".hmp.txt")
+map <- list(); geno <- list(); n_read <- 0L
+repeat {
+  ln <- readLines(con, n = CHUNK)
+  if (!length(ln)) break
+  if (limited) {
+    ln <- vapply(strsplit(ln, "\t", fixed = TRUE),
+                 function(x) paste(x[keep_col], collapse = "\t"), character(1))
   }
-  close(con_in); close(con_out)
+  h <- paste(hdr[keep_col], collapse = "\t")
+  writeLines(c(h, ln), tmp)
+  x <- as_numeric(tmp, from = "hapmap", to_r = TRUE, to_file = FALSE, verbose = FALSE)
+  G <- as.matrix(x[, 6:ncol(x), drop = FALSE])
+  miss <- rowMeans(is.na(G))
+  p <- (rowMeans(G, na.rm = TRUE) + 1) / 2
+  ok <- miss <= MAX_MISS & pmin(p, 1 - p) >= 0.05
+  ok[is.na(ok)] <- FALSE
+  map[[length(map) + 1L]] <- data.frame(snp = x$snp, allele = x$allele, chr = x$chr,
+                                        pos = x$pos, cm = NA_real_, ok = ok,
+                                        stringsAsFactors = FALSE)
+  G <- G[ok, , drop = FALSE]
+  if (anyNA(G)) { # impute missing calls to the major homozygote
+    maj <- ifelse(rowSums(G == 1L, na.rm = TRUE) > rowSums(G == -1L, na.rm = TRUE), 1L, -1L)
+    G[is.na(G)] <- maj[row(G)[is.na(G)]]
+  }
+  geno[[length(geno) + 1L]] <- matrix(as.raw(G + 1L), nrow(G), ncol(G),
+                                      dimnames = list(NULL, colnames(G)))
+  n_read <- n_read + length(ln)
+  message(sprintf("  %d SNPs read, %d kept so far", n_read, sum(vapply(geno, nrow, 1L))))
 }
+close(con)
+unlink(tmp)
+map  <- do.call(rbind, map)
+geno <- do.call(rbind, geno)
+message(sprintf("SNPs kept (missing <= %.2f, MAF >= 0.05): %d / %d (chromosome labels: %d distinct).",
+                MAX_MISS, nrow(geno), nrow(map), length(unique(map$chr[map$ok]))))
 
-# HapMap (nucleotide/IUPAC codes) -> numeric (-1/0/1). as_numeric writes a sibling
-# "<name>_numeric.txt" file (and returns NULL), matching the SP dataset's columns.
-as_numeric(hmp_sub, from = "hapmap")
-num_file <- sub("\\.hmp\\.txt$", "_numeric.txt", hmp_sub)
-SoySNP50K_div <- utils::read.delim(num_file, check.names = FALSE,
-                                   stringsAsFactors = FALSE)
+# The SoyBase HapMap has no genetic map; build one from the physical positions of
+# ALL SNPs so meiosis can be simulated (the engine errors clearly otherwise).
+map$cm <- synthetic_map(map$chr, map$pos)
 
-# The SoyBase HapMap has no genetic map; build one from the physical positions so
-# meiosis can be simulated (the engine errors clearly otherwise).
-SoySNP50K_div$cm <- synthetic_map(SoySNP50K_div$chr, SoySNP50K_div$pos)
-
-## finalize: MAF filter (>=0.05) + thin evenly across chromosomes to n_snps -
-# This is the step that turns the full converted slice into the curated,
-# shipped-size subset (mirrors the finalize step in the other data-raw/*.R
-# scripts).
-G   <- as.matrix(SoySNP50K_div[, 6:ncol(SoySNP50K_div), drop = FALSE])
-p   <- (rowMeans(G) + 1) / 2
-maf <- pmin(p, 1 - p)
-keep <- which(maf >= 0.05)
-message(sprintf("SNPs with MAF >= 0.05: %d / %d (chromosome labels: %d distinct).",
-                length(keep), length(maf),
-                length(unique(SoySNP50K_div$chr[keep]))))
-ord <- keep[order(SoySNP50K_div$chr[keep], SoySNP50K_div$pos[keep])]
+## finalize: thin evenly across chromosomes to n_snps -------------------------
+# This is the step that turns the full converted panel into the curated,
+# released subset (mirrors the finalize step in the other data-raw/*.R
+# scripts). `idx` maps rows of `geno` back to rows of `map`.
+idx <- which(map$ok)
+ord <- order(map$chr[idx], map$pos[idx])
 if (length(ord) > n_snps) ord <- ord[round(seq(1, length(ord), length.out = n_snps))]
-SoySNP50K_div <- SoySNP50K_div[ord, , drop = FALSE]
+SoySNP50K_div <- cbind(map[idx[ord], c("snp", "allele", "chr", "pos", "cm")],
+                       as.data.frame(matrix(as.integer(geno[ord, , drop = FALSE]) - 1L,
+                                            length(ord), ncol(geno),
+                                            dimnames = list(NULL, colnames(geno))),
+                                     check.names = FALSE))
 rownames(SoySNP50K_div) <- NULL
+rm(geno)
 
 ## sanity check + save -------------------------------------------------------
 stopifnot(all(unlist(SoySNP50K_div[, 6:ncol(SoySNP50K_div)]) %in% c(-1L, 0L, 1L)))

@@ -17,10 +17,12 @@ A cattle marker matrix in the same numeric format as
 \link{SNP55K_maize282_maf04}, curated from a worldwide cattle diversity panel
 (134 breeds) genotyped on the Illumina BovineSNP50 array (Decker et al.
 2014): 1,543 animals and 12,000 SNPs (MAF >= 0.05 in the subset, UMD3.1
-positions). This dataset is \strong{not} shipped inside the markerdata
-package; it is downloaded on first use with \code{marker_data("Cattle_div")}
-(a packed, xz-compressed download of about 5 MB) and cached locally
-afterward.
+positions). The package ships a
+sample of 1,000 SNPs and every individual, returned by
+\code{marker_data("Cattle_div")}; the whole panel described here is downloaded
+on first use with \code{marker_data("Cattle_div", full = TRUE)} (a packed,
+xz-compressed download of about 5 MB) and cached locally afterward (see
+\code{\link[=marker_cache_dir]{marker_cache_dir()}}).
 }
 \details{
 Genotypes are coded \code{-1}/\code{0}/\code{1}. Cattle are \strong{outbred} (about 29\%
@@ -32,8 +34,9 @@ The genetic-map column \code{cm} is a synthetic map built from physical
 positions with \code{simplePHENOTYPES::synthetic_map()}.
 }
 \examples{
+dim(marker_data("Cattle_div")) # bundled sample
 \donttest{
-geno <- marker_data("Cattle_div")
+geno <- marker_data("Cattle_div", full = TRUE) # whole panel (download)
 if (!is.null(geno)) dim(geno)
 }
 }
@@ -47,12 +50,21 @@ and Admixture in Domesticated Cattle. \emph{PLoS Genetics} 10(3):e1004254.
 \code{\link[=marker_data]{marker_data()}}, \code{\link[=marker_catalog]{marker_catalog()}}, \code{\link[=marker_references]{marker_references()}}
 
 Other marker datasets:
+\code{\link{Arabidopsis_div}},
 \code{\link{EUChip60K_div}},
+\code{\link{Human_div}},
 \code{\link{Poplar_div}},
+\code{\link{Potato_div}},
 \code{\link{Rice_div}},
 \code{\link{SNP55K_maize282_maf04}},
+\code{\link{Salmon_div}},
+\code{\link{Sheep_div}},
 \code{\link{Sorghum_div}},
 \code{\link{SoySNP50K_div}},
+\code{\link{SugarBeet_div}},
+\code{\link{Sugarcane_div}},
+\code{\link{Tomato_div}},
+\code{\link{WheatHex_div}},
 \code{\link{Wheat_div}}
 }
 \concept{marker datasets}

@@ -18,3 +18,5 @@
 ^docs$
 ^pkgdown$
 ^codecov\.yml$
+^TODO\.md$
+^README\.html$

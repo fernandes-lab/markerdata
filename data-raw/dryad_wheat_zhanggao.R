@@ -23,13 +23,13 @@
 #
 # The .xlsb (Excel binary) sheet has columns probeset_id, Chromosome (1A..7D),
 # position, Allele_A, Allele_B, then one two-nucleotide genotype per line
-# ("TT"/"TG"/"GG", "NA" = missing). An embedded Python (pyxlsb) dumps it to TSV;
+# ("TT"/"TG"/"GG", "NA" = missing). An embedded Python (stdlib BIFF12 reader) dumps it to TSV;
 # R then recodes each SNP to -1/0/1 via its Allele_A/Allele_B, keeps the 21 nuclear
 # chromosomes, adds a synthetic map, MAF-filters (>=0.05) and thins evenly to a
 # curated 12,000-SNP subset -> data-raw/built/WheatHex_div.rda. Hexaploid wheat
 # lines are largely homozygous (additive schemes; cf. SoySNP50K_div).
 #
-# Requires: python3 with `pyxlsb` (pip install --user pyxlsb).
+# Requires: python3 (standard library only; a small BIFF12 reader replaces pyxlsb).
 #
 # Usage:  Rscript data-raw/dryad_wheat_zhanggao.R [genotype.xlsb] [n_snps] [out.rda]
 #   defaults: data-raw/wheat/original_genotype_data.xlsb, 12000 SNPs ->
@@ -45,19 +45,56 @@ stopifnot(file.exists(infile))
 
 tmp <- tempdir()
 
-## 1. dump the .xlsb sheet to TSV via pyxlsb --------------------------------
+## 1. dump the .xlsb sheet to TSV via a stdlib reader ----------------------
 py  <- file.path(tmp, "xlsb_dump.py")
 tsv <- file.path(tmp, "wheat.tsv")
 writeLines(c(
-  "import sys, csv, pyxlsb",
+  "import sys, csv, zipfile, struct",
   "inx, out = sys.argv[1], sys.argv[2]",
-  "wb = pyxlsb.open_workbook(inx)",
-  "with wb.get_sheet(wb.sheets[0]) as ws, open(out, 'w', newline='') as fo:",
+  "z = zipfile.ZipFile(inx)",
+  "def recs(buf):",
+  "    i, n = 0, len(buf)",
+  "    while i < n:",
+  "        t = buf[i]; i += 1",
+  "        if t & 0x80:",
+  "            t = (t & 0x7f) | (buf[i] << 7); i += 1",
+  "        sz, sh = 0, 0",
+  "        for _ in range(4):",
+  "            b = buf[i]; i += 1",
+  "            sz |= (b & 0x7f) << sh; sh += 7",
+  "            if not b & 0x80: break",
+  "        yield t, buf[i:i + sz]; i += sz",
+  "sst = []",
+  "for t, d in recs(z.read('xl/sharedStrings.bin')):",
+  "    if t == 19:",
+  "        k = struct.unpack_from('<I', d, 1)[0]",
+  "        sst.append(d[5:5 + 2 * k].decode('utf-16-le'))",
+  "def val(t, d):",
+  "    if t == 7: return sst[struct.unpack_from('<I', d, 8)[0]]",
+  "    if t == 5: return repr(struct.unpack_from('<d', d, 8)[0])",
+  "    if t == 6:",
+  "        k = struct.unpack_from('<I', d, 8)[0]; return d[12:12 + 2 * k].decode('utf-16-le')",
+  "    if t == 2:",
+  "        r = struct.unpack_from('<I', d, 8)[0]",
+  "        if r & 2: v = struct.unpack('<i', struct.pack('<I', r))[0] >> 2",
+  "        else: v = struct.unpack('<d', struct.pack('<Q', (r & 0xfffffffc) << 32))[0]",
+  "        return repr(v / 100 if r & 1 else v)",
+  "    return ''",
+  "# shortcut: standard-library BIFF12 reader (RK/real/string cells only), used",
+  "# because pyxlsb is not installable here; first worksheet only.",
+  "rows, cur, row = [], None, None",
+  "for t, d in recs(z.read('xl/worksheets/sheet1.bin')):",
+  "    if t == 0:",
+  "        row = []; rows.append(row)",
+  "    elif t in (1, 2, 5, 6, 7):",
+  "        c = struct.unpack_from('<I', d, 0)[0]",
+  "        while len(row) < c: row.append('')",
+  "        row.append(val(t, d))",
+  "with open(out, 'w', newline='') as fo:",
   "    w = csv.writer(fo, delimiter='\\t')",
-  "    for row in ws.rows():",
-  "        w.writerow(['' if c.v is None else c.v for c in row])"
+  "    w.writerows(rows)"
 ), py)
-st <- system2("python3", c(shQuote(py), shQuote(normalizePath(infile)), shQuote(tsv)))
+st <- system2("python3", c("-I", shQuote(py), shQuote(normalizePath(infile)), shQuote(tsv)))
 stopifnot(st == 0L, file.exists(tsv))
 dat <- data.table::fread(tsv, header = TRUE, sep = "\t", data.table = FALSE,
                          colClasses = "character")

@@ -4,37 +4,68 @@
 \alias{marker_data}
 \title{Get a marker data set}
 \usage{
-marker_data(name, cache = marker_cache_dir(), download = TRUE, quiet = FALSE)
+marker_data(
+  name,
+  full = FALSE,
+  cache = marker_cache_dir(),
+  download = TRUE,
+  quiet = FALSE
+)
 }
 \arguments{
 \item{name}{\code{character(1)} data set name; must be one of
 \code{marker_catalog()$name}.}
 
-\item{cache}{\code{character(1)} cache directory for remote data sets.
+\item{full}{\code{logical(1)}: if \code{FALSE} (the default), return the sample
+shipped with the package; if \code{TRUE}, return the whole panel,
+downloading it when it is not cached yet. Ignored for
+\code{SNP55K_maize282_maf04}, which is bundled whole. For the sample-only
+data sets (\code{Arabidopsis_div}, \code{Human_div}), markerdata hosts no whole
+panel: \code{full = TRUE} warns, gives the \code{source_url} of the original
+data and returns \code{NULL}; nothing is downloaded. Use
+\code{\link[=marker_download]{marker_download()}} to fetch every full panel at once.}
+
+\item{cache}{\code{character(1)} cache directory for full panels.
 Defaults to \code{\link[=marker_cache_dir]{marker_cache_dir()}}.}
 
-\item{download}{\code{logical(1)}: if \code{FALSE}, never download -- only return
-the data set if it is bundled or already cached.}
+\item{download}{\code{logical(1)}: if \code{FALSE}, never download -- with
+\code{full = TRUE}, only return the panel if it is already cached.}
 
 \item{quiet}{\code{logical(1)}: if \code{FALSE} (the default), print a message
-when a download happens.}
+when a sample is returned or a download happens.}
 }
 \value{
 The requested marker \code{data.frame}, or (invisibly) \code{NULL} with a
-\code{warning()} if the data set could not be obtained (for example, no
-network connection).
+\code{warning()} if a full panel could not be obtained (for example, no
+network connection, or a sample-only data set with \code{full = TRUE}).
 }
 \description{
-Returns a marker data set as a \code{data.frame}. The one bundled data set
-(\code{SNP55K_maize282_maf04}) loads instantly; every other data set is
-downloaded from the package's GitHub release on first use and cached
-locally (see \code{\link[=marker_cache_dir]{marker_cache_dir()}}) so later calls are instant too.
+Returns a marker data set as a \code{data.frame}. Every data set is available
+offline: the maize panel (\code{SNP55K_maize282_maf04}) is bundled whole, and
+each of the other data sets ships a sample (2,000 SNPs, every individual)
+inside the package. Ask for the whole panel with \code{full = TRUE}; it is
+downloaded from the package's GitHub releases on first use and cached
+locally (see \code{\link[=marker_cache_dir]{marker_cache_dir()}}) so later calls are instant.
 }
+\section{The sample}{
+
+A sample is a fixed thinning of the full panel, built by
+\code{data-raw/samples.R} without random numbers: every individual of the
+panel, and 2,000 SNPs (1,000 for the four largest panels) evenly spaced over those that are polymorphic among
+them. It has the same columns and coding as the
+full panel and is meant for examples, tests and quick simulations; use
+\code{full = TRUE} for real studies.
+}
+
 \examples{
 head(marker_data("SNP55K_maize282_maf04")[, 1:8])
 
+# the sample shipped with the package: no download
+dim(marker_data("Rice_div"))
+
 \donttest{
-geno <- marker_data("Rice_div")
+# the whole panel: downloaded on first use, then cached
+geno <- marker_data("Rice_div", full = TRUE)
 if (!is.null(geno)) dim(geno)
 }
 }

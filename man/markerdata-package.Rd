@@ -6,12 +6,14 @@
 \alias{markerdata-package}
 \title{markerdata: Marker Data Sets for Breeding Simulation}
 \description{
-Curated SNP marker panels for breeding-program simulation. One small
-maize panel is bundled with the package; the larger panels (cattle,
-eucalyptus, poplar, rice, sorghum, soybean, wheat) are downloaded on
-demand from the package's GitHub release and cached locally, so they do
-not bloat the installed package. See \code{\link[=marker_data]{marker_data()}} to load a data
-set (downloading and caching it if needed), \code{\link[=marker_catalog]{marker_catalog()}} to list
+Curated SNP marker panels for breeding-program simulation, across
+crops, trees, livestock and fish. One small maize panel is bundled whole;
+every other panel ships a 2,000-SNP sample (every individual), and
+the whole panel is downloaded on demand from the package's GitHub
+releases and cached locally, so it does not bloat the installed package.
+Arabidopsis and human (1001 Genomes, 1000 Genomes Project) are sample
+only, with the original download in the catalog's \code{source_url}. See \code{\link[=marker_data]{marker_data()}} to load a data set (the
+sample, or the whole panel with \code{full = TRUE}), \code{\link[=marker_catalog]{marker_catalog()}} to list
 every available data set and its availability, and
 \code{\link[=marker_references]{marker_references()}} for the literature citations behind each one.
 }

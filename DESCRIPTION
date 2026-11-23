@@ -6,10 +6,12 @@ Authors@R:
            role = c("aut", "cre"), comment = c(ORCID = "0000-0001-8269-535X"))
 Description: Curated single-nucleotide polymorphism (SNP) marker panels from
     public genomic resources, formatted as founder genotypes for breeding-program
-    simulation with 'simplePHENOTYPES' and 'breedingDesigner'. One small maize
-    panel is bundled; larger panels (cattle, eucalyptus, poplar, rice, sorghum,
-    soybean, wheat) are downloaded on first use from the package's GitHub
-    release and cached locally. Every data set is documented with its source
+    simulation with 'simplePHENOTYPES' and 'breedingDesigner'. Panels cover crops, trees,
+    livestock and fish. One small maize panel is bundled whole and a sample of
+    each larger panel is included; the whole panels are downloaded on request
+    from the package's GitHub releases and cached locally. Samples of Arabidopsis (1001 Genomes) and human (1000
+    Genomes Project) data are included too, with a link to the original
+    download. Every data set is documented with its source
     repository, license and literature reference, which are also available as
     citation objects.
 License: MIT + file LICENSE

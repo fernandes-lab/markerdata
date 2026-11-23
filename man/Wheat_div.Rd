@@ -22,10 +22,12 @@ Collection (TGC)} --- wild and domesticated emmer, durum wheat
 landraces and tetraploid subspecies --- genotyped on the wheat 90K
 iSelect SNP array (Maccaferri et al. 2019): 1,854 accessions and 12,000
 SNPs (MAF >= 0.05 in the subset, spanning the 14 nuclear chromosomes of
-the A and B subgenomes, 1A--7B). This dataset is \strong{not} shipped inside
-the markerdata package; it is downloaded on first use with
-\code{marker_data("Wheat_div")} (a packed, xz-compressed download of about
-6 MB) and cached locally afterward.
+the A and B subgenomes, 1A--7B). The package ships a
+sample of 1,000 SNPs and every individual, returned by
+\code{marker_data("Wheat_div")}; the whole panel described here is downloaded
+on first use with \code{marker_data("Wheat_div", full = TRUE)} (a packed,
+xz-compressed download of about 6 MB) and cached locally afterward (see
+\code{\link[=marker_cache_dir]{marker_cache_dir()}}).
 }
 \details{
 Genotypes are coded \code{-1}/\code{0}/\code{1}. Tetraploid wheat lines are largely
@@ -51,8 +53,9 @@ positions with \code{simplePHENOTYPES::synthetic_map()}, one map per
 chromosome.
 }
 \examples{
+dim(marker_data("Wheat_div")) # bundled sample
 \donttest{
-geno <- marker_data("Wheat_div")
+geno <- marker_data("Wheat_div", full = TRUE) # whole panel (download)
 if (!is.null(geno)) dim(geno)
 }
 }
@@ -66,13 +69,22 @@ Genetics} 51:885-895. \doi{10.1038/s41588-019-0381-3}
 \code{\link[=marker_data]{marker_data()}}, \code{\link[=marker_catalog]{marker_catalog()}}, \code{\link[=marker_references]{marker_references()}}
 
 Other marker datasets:
+\code{\link{Arabidopsis_div}},
 \code{\link{Cattle_div}},
 \code{\link{EUChip60K_div}},
+\code{\link{Human_div}},
 \code{\link{Poplar_div}},
+\code{\link{Potato_div}},
 \code{\link{Rice_div}},
 \code{\link{SNP55K_maize282_maf04}},
+\code{\link{Salmon_div}},
+\code{\link{Sheep_div}},
 \code{\link{Sorghum_div}},
-\code{\link{SoySNP50K_div}}
+\code{\link{SoySNP50K_div}},
+\code{\link{SugarBeet_div}},
+\code{\link{Sugarcane_div}},
+\code{\link{Tomato_div}},
+\code{\link{WheatHex_div}}
 }
 \concept{marker datasets}
 \keyword{datasets}

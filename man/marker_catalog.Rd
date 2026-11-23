@@ -14,15 +14,24 @@ downloaded remote data sets. Defaults to \code{\link[=marker_cache_dir]{marker_c
 A \code{data.frame}, one row per data set, with the catalog columns
 (\code{name}, \code{species}, \code{common_name}, \code{panel}, \code{ploidy}, \code{mating},
 \code{n_snp}, \code{n_ind}, \code{het}, \code{chr_labels}, \code{license}, \code{source},
-\code{source_doi}, \code{reference}, \code{doi}, \code{bundled}, \code{file}, \code{release},
-\code{bytes}, \code{md5}) plus two logical columns: \code{cached} (the remote file is
-already present in \code{cache}) and \code{available} (\code{bundled | cached}).
+\code{source_doi}, \code{source_url}, \code{reference}, \code{doi}, \code{bundled}, \code{file}, \code{release},
+\code{bytes}, \code{md5}) plus two logical columns: \code{cached} (the full panel's
+file is already present in \code{cache}) and \code{available}
+(\code{bundled | cached}, i.e. the full panel can be loaded without a
+download; the sample always can). \code{source_url} is the page or
+directory where the original full data can be downloaded (empty when
+none is recorded).
 }
 \description{
-Returns the package's catalog of marker data sets: one small bundled
-panel plus a set of larger panels downloaded on demand (see
-\code{\link[=marker_data]{marker_data()}}). The catalog reports which data sets are already
-available on this machine.
+Returns the package's catalog of marker data sets: one small panel
+bundled whole plus a set of larger panels, each shipped as a sample and
+downloaded whole on demand (see \code{\link[=marker_data]{marker_data()}}). Every row describes
+the full panel, except the rows of the sample-only data sets
+(\code{Arabidopsis_div}, \code{Human_div}), where \code{n_snp}, \code{n_ind} and \code{het}
+describe the sample, because markerdata does not host the whole data
+set: its \code{file}, \code{release}, \code{bytes} and \code{md5} are empty and \code{source_url}
+says where to download the original. The catalog reports which full
+panels are already available on this machine.
 }
 \examples{
 cat <- marker_catalog()

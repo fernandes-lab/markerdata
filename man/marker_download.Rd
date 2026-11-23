@@ -13,8 +13,10 @@ marker_download(
 }
 \arguments{
 \item{names}{\code{character()} vector of data set names to download, or
-\code{NULL} (the default) for every remote (non-bundled) data set in the
-catalog.}
+\code{NULL} (the default) for every data set whose whole panel markerdata
+hosts. The sample-only data sets (\code{Arabidopsis_div}, \code{Human_div}) are
+skipped silently then; asking for one by name gives a warning with
+its \code{source_url}, and its entry in the result is \code{FALSE}.}
 
 \item{cache}{\code{character(1)} cache directory. Defaults to
 \code{\link[=marker_cache_dir]{marker_cache_dir()}}.}
@@ -31,9 +33,11 @@ data set) indicating whether the file is present in the cache after
 the call.
 }
 \description{
-Downloads one or more remote marker data sets so subsequent
-\code{\link[=marker_data]{marker_data()}} calls are served from the local cache without network
-access.
+Downloads one or more full marker panels so subsequent
+\code{marker_data(name, full = TRUE)} calls are served from the local cache
+without network access. Called with no arguments, it downloads every
+full panel (roughly 19 MB in total; the \code{bytes} column of
+\code{\link[=marker_catalog]{marker_catalog()}} gives each size).
 }
 \examples{
 \donttest{

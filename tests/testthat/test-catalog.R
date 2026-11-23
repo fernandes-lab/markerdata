@@ -112,3 +112,22 @@ test_that("real references database: every catalog name has an entry", {
 
   expect_error(print(one), NA)
 })
+
+test_that("the real catalog has source_url for hosted-free rows and complete references", {
+  cat <- .catalog()
+  expect_true("source_url" %in% names(cat))
+  expect_length(cat$name, 17L) # bundled maize + 14 hosted + 2 sample-only
+  new <- cat[cat$name %in% c("Arabidopsis_div", "Human_div"), ]
+  expect_identical(new$source_url, c(
+    "https://1001genomes.org/data/GMI-MPI/releases/v3.1/",
+    "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/"
+  ))
+  expect_false(any(new$bundled))
+  expect_identical(new$n_snp, c(2000L, 2000L))
+  expect_identical(new$n_ind, c(1097L, 2504L))
+  expect_true(all(grepl("sample", new$panel, ignore.case = TRUE) & grepl("source_url", new$panel)))
+  # every catalog row has a reference entry
+  expect_setequal(names(get(".marker_refs", envir = asNamespace("markerdata"))), cat$name)
+  expect_match(gsub("\\s+", " ", paste(format(marker_references("Human_div")), collapse = " ")),
+    "global reference for human genetic variation")
+})

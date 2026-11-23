@@ -4,8 +4,8 @@
 \alias{SoySNP50K_div}
 \title{Soybean SoySNP50K genotypes (SoyBase diversity subset)}
 \format{
-A data frame of 12,000 rows (SNPs) by 305 columns: the first
-five are \code{snp}, \code{allele}, \code{chr}, \code{pos}, \code{cm}; the remaining 300 are
+A data frame of 12,000 rows (SNPs) by 20,092 columns: the first
+five are \code{snp}, \code{allele}, \code{chr}, \code{pos}, \code{cm}; the remaining 20,087 are
 accessions (USDA PI numbers), each an integer genotype in
 \verb{\{-1, 0, 1\}}.
 }
@@ -19,12 +19,15 @@ USDA/SoyBase data; please cite the references below. Built by
 \description{
 A soybean marker matrix in the same numeric format as
 \link{SNP55K_maize282_maf04}, curated from the SoySNP50K genotyping of the
-USDA Soybean Germplasm Collection: 300 accessions and 12,000 SNPs
-(MAF >= 0.05 in the subset) on the Wm82.a2 (\code{Wm82.gnm2}) assembly. This
-dataset is \strong{not} shipped inside the markerdata package; it is
-downloaded on first use with \code{marker_data("SoySNP50K_div")} (a packed,
-xz-compressed download of about 1 MB) and cached locally afterward (see
-\code{\link[=marker_cache_dir]{marker_cache_dir()}}).
+USDA Soybean Germplasm Collection: all 20,087 accessions and 12,000 SNPs
+(MAF >= 0.05 and at most 5\% missing calls; remaining missing calls
+imputed to the major homozygote) on the Wm82.a2 (\code{Wm82.gnm2}) assembly. The
+package ships a sample of 1,000 SNPs (fewer than the other samples, to keep
+the package small) and every individual, returned by
+\code{marker_data("SoySNP50K_div")}; the whole panel described here is
+downloaded on first use with \code{marker_data("SoySNP50K_div", full = TRUE)}
+(a packed, xz-compressed download of about 6 MB) and cached locally
+afterward (see \code{\link[=marker_cache_dir]{marker_cache_dir()}}).
 }
 \details{
 Genotypes are coded \code{-1}/\code{0}/\code{1} (reference homozygote / heterozygote /
@@ -44,8 +47,9 @@ positions with \code{simplePHENOTYPES::synthetic_map()} (the SoyBase files
 carry no cM); replace it with a real map if you have one.
 }
 \examples{
+dim(marker_data("SoySNP50K_div")) # bundled sample
 \donttest{
-geno <- marker_data("SoySNP50K_div")
+geno <- marker_data("SoySNP50K_div", full = TRUE) # whole panel (download)
 if (!is.null(geno)) dim(geno)
 }
 }
@@ -64,12 +68,21 @@ research. \emph{G3: Genes, Genomes, Genetics} 5(10):1999-2006.
 \code{\link[=marker_data]{marker_data()}}, \code{\link[=marker_catalog]{marker_catalog()}}, \code{\link[=marker_references]{marker_references()}}
 
 Other marker datasets:
+\code{\link{Arabidopsis_div}},
 \code{\link{Cattle_div}},
 \code{\link{EUChip60K_div}},
+\code{\link{Human_div}},
 \code{\link{Poplar_div}},
+\code{\link{Potato_div}},
 \code{\link{Rice_div}},
 \code{\link{SNP55K_maize282_maf04}},
+\code{\link{Salmon_div}},
+\code{\link{Sheep_div}},
 \code{\link{Sorghum_div}},
+\code{\link{SugarBeet_div}},
+\code{\link{Sugarcane_div}},
+\code{\link{Tomato_div}},
+\code{\link{WheatHex_div}},
 \code{\link{Wheat_div}}
 }
 \concept{marker datasets}

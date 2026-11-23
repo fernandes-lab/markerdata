@@ -23,9 +23,15 @@
 # preserves any bytes/md5 already present in inst/extdata/catalog.csv, so it
 # never wipes checksums that release.R has already computed.
 #
-# WheatHex_div (the hexaploid bread-wheat panel built by
-# data-raw/dryad_wheat_zhanggao.R) is intentionally NOT included below: it is
-# a second, not-yet-released wheat option (see that script's header).
+# source_url is where the ORIGINAL full data can be downloaded. Arabidopsis_div
+# and Human_div are sample-only (sample_only = TRUE below): markerdata hosts
+# no whole panel for them, so file/release/bytes/md5 stay empty, and their
+# n_snp/n_ind/het describe the shipped sample (data-raw/s1database_panels.R).
+#
+# Hosted panels belong to a GitHub release tag: rows without a `release` field
+# below are in "data-v1"; the seven panels added later set release = "data-v2".
+# Add a new tag by setting `release` on the new rows only: the old rows keep
+# their file/release/bytes/md5 (release.R never re-tags them).
 
 suppressWarnings(suppressMessages({
   ok_utils <- requireNamespace("utils", quietly = TRUE)
@@ -54,6 +60,7 @@ datasets <- list(
     license = "Panzea public data",
     source = "Panzea, maize282set MaizeSNP50 genotypes (MAF>0.4 subset)",
     source_doi = "",
+    source_url = "",
     reference = "Cook et al. (2012) Plant Physiology 158(2):824-834",
     doi = "10.1104/pp.111.185033",
     bundled = TRUE,
@@ -78,6 +85,7 @@ datasets <- list(
     license = "Public USDA/SoyBase data (cite)",
     source = "SoyBase, glyma.Wm82.gnm2.div.Song_Hyten_2015.hmp.gz (HapMap)",
     source_doi = "",
+    source_url = "https://data.soybase.org/Glycine/max/diversity/Wm82.gnm2.div.Song_Hyten_2015/",
     reference = "Song et al. (2013) PLoS ONE 8(1):e54985; Song et al. (2015) G3 5(10):1999-2006",
     doi = "10.1371/journal.pone.0054985; 10.1534/g3.115.019000",
     bundled = FALSE,
@@ -115,6 +123,7 @@ datasets <- list(
     license = "CC0-1.0",
     source = "Dryad, SNP_Data.txt",
     source_doi = "10.5061/dryad.ms580",
+    source_url = "https://doi.org/10.5061/dryad.ms580",
     reference = "Resende et al. (2017) Heredity 119(4):245-255; Silva-Junior et al. (2015) New Phytologist 206(4):1527-1540",
     doi = "10.1038/hdy.2017.37; 10.1111/nph.13322",
     bundled = FALSE,
@@ -152,6 +161,7 @@ datasets <- list(
     license = "CC-BY-4.0",
     source = "Zenodo, WEST Diversity Panel GBS (rawGBS_imputed_850x5mi.vcf.gz)",
     source_doi = "10.5281/zenodo.5019227",
+    source_url = "https://doi.org/10.5281/zenodo.5019227",
     reference = "Ferguson et al. (2021) Plant Physiology 187(3):1481-1500",
     doi = "10.1093/plphys/kiab346",
     bundled = FALSE,
@@ -183,6 +193,7 @@ datasets <- list(
     license = "CC0-1.0",
     source = "Dryad, MET_crfilt_.75_allchrom.hmp.txt",
     source_doi = "10.5061/dryad.7369p",
+    source_url = "https://doi.org/10.5061/dryad.7369p",
     reference = "Spindel et al. (2015) PLoS Genetics 11(2):e1004982",
     doi = "10.1371/journal.pgen.1004982",
     bundled = FALSE,
@@ -214,6 +225,7 @@ datasets <- list(
     license = "CC0-1.0",
     source = "Dryad, WorldWideCattleDryad.zip (PLINK .ped/.map)",
     source_doi = "10.5061/dryad.th092",
+    source_url = "https://doi.org/10.5061/dryad.th092",
     reference = "Decker et al. (2014) PLoS Genetics 10(3):e1004254",
     doi = "10.1371/journal.pgen.1004254",
     bundled = FALSE,
@@ -245,6 +257,7 @@ datasets <- list(
     license = "CC0-1.0",
     source = "Dryad, FOR_DRYAD_TandB_fwd_june2013_434.txt",
     source_doi = "10.5061/dryad.7s848",
+    source_url = "https://doi.org/10.5061/dryad.7s848",
     reference = "Geraldes et al. (2014) Evolution 68(11):3260-3280; Geraldes et al. (2013) Molecular Ecology Resources 13(2):306-323",
     doi = "10.1111/evo.12497; 10.1111/1755-0998.12056",
     bundled = FALSE,
@@ -282,6 +295,7 @@ datasets <- list(
     license = "T3/Wheat public data (cite; terms to confirm)",
     source = "T3/Wheat (Triticeae Toolbox), ..._TGC-GTC_collection_SNP90K_mapped_filtered.vcf",
     source_doi = "",
+    source_url = "",
     reference = "Maccaferri et al. (2019) Nature Genetics 51:885-895",
     doi = "10.1038/s41588-019-0381-3",
     bundled = FALSE,
@@ -298,6 +312,259 @@ datasets <- list(
         title = "Tetraploid wheat Global Collection (TGC), SNP90K genotypes",
         author = person(family = "Triticeae Toolbox (T3/Wheat)"), year = 2020,
         note = "T3/Wheat public data; redistribution terms to confirm")
+    )
+  ),
+  list(
+    name = "Arabidopsis_div",
+    species = "Arabidopsis thaliana",
+    common_name = "arabidopsis",
+    panel = "1001 Genomes, 1,097 accessions, 6,000-SNP pilot panel, TAIR10; SAMPLE ONLY (2,000 SNPs x 1,097 accessions): the whole data set is at source_url",
+    ploidy = "diploid",
+    mating = "inbred (selfing)",
+    license = "1001 Genomes Data Usage Policy (cite; acknowledge the Weigel lab, MPI; redistribution terms to confirm)",
+    source = "1001 Genomes Consortium, 1001genomes_snp-short-indel_only_ACGTN.vcf.gz (GMI-MPI release v3.1), via the s1database pilot-v1 panel",
+    source_doi = "",
+    source_url = "https://1001genomes.org/data/GMI-MPI/releases/v3.1/",
+    reference = "1001 Genomes Consortium (2016) Cell 166(2):481-491",
+    doi = "10.1016/j.cell.2016.05.063",
+    bundled = FALSE,
+    sample_only = TRUE,
+    refs = c(
+      bibentry(bibtype = "Article",
+        key = "g1001genomes2016",
+        title = "1,135 Genomes Reveal the Global Pattern of Polymorphism in Arabidopsis thaliana",
+        author = person(family = "1001 Genomes Consortium"),
+        journal = "Cell", year = 2016, volume = 166, number = 2,
+        pages = "481-491", doi = "10.1016/j.cell.2016.05.063")
+    )
+  ),
+  list(
+    name = "Human_div",
+    species = "Homo sapiens",
+    common_name = "human",
+    panel = "1000 Genomes Project phase 3, 2,504 people, 6,000-SNP pilot panel, GRCh37; SAMPLE ONLY (2,000 SNPs x 2,504 people): the whole data set is at source_url",
+    ploidy = "diploid",
+    mating = "outbred",
+    license = "IGSR open data, no embargo (cite; see the IGSR data reuse statement)",
+    source = "1000 Genomes Project phase 3 release 20130502, ALL.chr*.phase3_shapeit2_mvncall_integrated_v5b.20130502.genotypes.vcf.gz, via the s1database pilot-v1 panel",
+    source_doi = "",
+    source_url = "ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/",
+    reference = "1000 Genomes Project Consortium (2015) Nature 526:68-74",
+    doi = "10.1038/nature15393",
+    bundled = FALSE,
+    sample_only = TRUE,
+    refs = c(
+      bibentry(bibtype = "Article",
+        key = "g1000genomes2015",
+        title = "A global reference for human genetic variation",
+        author = person(family = "The 1000 Genomes Project Consortium"),
+        journal = "Nature", year = 2015, volume = 526, number = 7571,
+        pages = "68-74", doi = "10.1038/nature15393")
+    )
+  ),
+  list(
+    name = "SugarBeet_div",
+    species = "Beta vulgaris",
+    common_name = "sugar beet",
+    panel = "1,928 public germplasm accessions (cultivated and wild sea beet), genotyping-by-sequencing (GBS), imputed by the source",
+    ploidy = "diploid",
+    mating = "outbred",
+    license = "CC-BY-4.0",
+    source = "Zenodo, GBS_imputed_MA05_100bp_082421.hmp.txt (HapMap)",
+    source_doi = "",
+    source_url = "https://zenodo.org/records/11551725",
+    reference = "Tehseen et al. (2023) Crop Science 63(4):2255-2273",
+    doi = "10.1002/csc2.20978",
+    bundled = FALSE,
+    release = "data-v2",
+    refs = c(
+      bibentry(bibtype = "Article",
+        key = "tehseen2023sugarbeet",
+        title = "Potential of publicly available Beta vulgaris germplasm for sustainable sugarbeet improvement indicated by combining analysis of genetic diversity and historic resistance evaluation",
+        author = c(p("Tehseen", "M. M."), p("Poore", "R. C."), p("Fugate", "K. K."),
+                   p("Bolton", "M. D."), p("Ramachandran", "V."), p("Wyatt", "N. A."),
+                   p("Li", "X."), p("Chu", "C.")),
+        journal = "Crop Science", year = 2023, volume = 63, number = 4,
+        pages = "2255-2273", doi = "10.1002/csc2.20978"),
+      bibentry(bibtype = "Misc",
+        key = "chu2024sugarbeetgbs",
+        title = "Imputed GBS genotypes of publicly available Beta vulgaris germplasm (GBS_imputed_MA05_100bp_082421)",
+        author = p("Chu", "C."), year = 2024,
+        url = "https://zenodo.org/records/11551725", note = "Zenodo (CC-BY-4.0)")
+    )
+  ),
+  list(
+    name = "Tomato_div",
+    species = "Solanum lycopersicum",
+    common_name = "tomato",
+    panel = "two germplasm collections (162 + 191 accessions), Axiom 51K tomato array; allele column is major/minor (the source has no reference allele)",
+    ploidy = "diploid",
+    mating = "inbred (mostly)",
+    license = "CC-BY-4.0",
+    source = "Mendeley Data, The 51K SNP data of two tomato collections (TGC1 and TGC2 .xlsx)",
+    source_doi = "10.17632/bxcpc274fh.1",
+    source_url = "https://data.mendeley.com/datasets/bxcpc274fh/1",
+    reference = "Yeon et al. (2024) BMC Plant Biology 24:222",
+    doi = "10.1186/s12870-024-04934-8",
+    bundled = FALSE,
+    release = "data-v2",
+    refs = c(
+      bibentry(bibtype = "Article",
+        key = "yeon2024tomato",
+        title = "Prediction accuracy of genomic estimated breeding values for fruit traits in cultivated tomato (Solanum lycopersicum L.)",
+        author = c(p("Yeon", "J."), p("Nguyen", "T. T. P."), p("Kim", "M."), p("Sim", "S.-C.")),
+        journal = "BMC Plant Biology", year = 2024, volume = 24, pages = "222",
+        doi = "10.1186/s12870-024-04934-8"),
+      bibentry(bibtype = "Misc",
+        key = "sim2024tomato51k",
+        title = "The 51K SNP data of two tomato collections",
+        author = p("Sim", "S.-C."), year = 2023,
+        doi = "10.17632/bxcpc274fh.1", note = "Mendeley Data (CC-BY-4.0)")
+    )
+  ),
+  list(
+    name = "WheatHex_div",
+    species = "Triticum aestivum",
+    common_name = "bread wheat",
+    panel = "159 hexaploid wheat lines, Axiom 55K-type array",
+    ploidy = "allohexaploid (AABBDD, disomic; coded per subgenome)",
+    mating = "inbred",
+    license = "CC0-1.0",
+    source = "Zenodo (mirror of Dryad), original_genotype_data.xlsb",
+    source_doi = "10.5061/dryad.4xgxd25ht",
+    source_url = "https://zenodo.org/records/10791194",
+    reference = "Zhang & Gao (2024) Dryad (data-only deposit)",
+    doi = "10.5061/dryad.4xgxd25ht",
+    bundled = FALSE,
+    release = "data-v2",
+    refs = c(
+      bibentry(bibtype = "Misc",
+        key = "zhang2024wheathex",
+        title = "Original genotype data of 159 wheat samples",
+        author = c(p("Zhang", "X."), p("Gao", "Z.")), year = 2024,
+        doi = "10.5061/dryad.4xgxd25ht", note = "Dryad Digital Repository (CC0); data-only deposit, no journal article")
+    )
+  ),
+  list(
+    name = "Salmon_div",
+    species = "Salmo salar",
+    common_name = "Atlantic salmon",
+    panel = "farmed Tasmanian breeding population, Affymetrix Axiom array",
+    ploidy = "diploid",
+    mating = "outbred",
+    license = "CC0-1.0",
+    source = "Zenodo (mirror of Dryad), Salmon_SNP.zip (PLINK)",
+    source_doi = "10.5061/dryad.pm354",
+    source_url = "https://zenodo.org/records/5013066",
+    reference = "Kijas et al. (2017) Animal Genetics 48(2):237-241",
+    doi = "10.1111/age.12513",
+    bundled = FALSE,
+    release = "data-v2",
+    refs = c(
+      bibentry(bibtype = "Article",
+        key = "kijas2017salmon",
+        title = "Diversity and linkage disequilibrium in farmed Tasmanian Atlantic salmon",
+        author = c(p("Kijas", "J."), p("Elliot", "N."), p("Kube", "P."), p("Evans", "B."),
+                   p("Botwright", "N."), p("King", "H."), p("Primmer", "C. R."),
+                   p("Verbyla", "K.")),
+        journal = "Animal Genetics", year = 2017, volume = 48, number = 2,
+        pages = "237-241", doi = "10.1111/age.12513"),
+      bibentry(bibtype = "Misc",
+        key = "dryad2017salmon",
+        title = "Data from: Diversity and linkage disequilibrium in farmed Tasmanian Atlantic salmon",
+        author = c(p("Kijas", "J."), p("Elliot", "N."), p("Kube", "P."), p("Evans", "B."),
+                   p("Botwright", "N."), p("King", "H."), p("Primmer", "C. R."),
+                   p("Verbyla", "K.")),
+        year = 2017, doi = "10.5061/dryad.pm354", note = "Dryad Digital Repository")
+    )
+  ),
+  list(
+    name = "Sheep_div",
+    species = "Ovis aries",
+    common_name = "sheep",
+    panel = "37 populations (Merino and Merino-derived breeds, other domestic breeds, a few wild Ovis), Illumina OvineSNP50",
+    ploidy = "diploid",
+    mating = "outbred",
+    license = "CC0-1.0",
+    source = "Dryad, CIANI.rar (PLINK)",
+    source_doi = "10.5061/dryad.2p0qf",
+    source_url = "https://datadryad.org/dataset/doi:10.5061/dryad.2p0qf",
+    reference = "Ciani et al. (2015) Genetics Selection Evolution 47:64",
+    doi = "10.1186/s12711-015-0139-z",
+    bundled = FALSE,
+    release = "data-v2",
+    refs = c(
+      bibentry(bibtype = "Article",
+        key = "ciani2015sheep",
+        title = "Merino and Merino-derived sheep breeds: a genome-wide intercontinental study",
+        author = c(p("Ciani", "E."), p("Lasagna", "E."), p("D'Andrea", "M."),
+                   p("Alloggio", "I."), p("Marroni", "F."), p("Ceccobelli", "S."),
+                   p("Delgado Bermejo", "J. V."), p("Sarti", "F. M."), p("Kijas", "J."),
+                   p("Lenstra", "J. A."), p("Pilla", "F.")),
+        journal = "Genetics Selection Evolution", year = 2015, volume = 47, pages = "64",
+        doi = "10.1186/s12711-015-0139-z"),
+      bibentry(bibtype = "Misc",
+        key = "dryad2015sheep",
+        title = "Data from: Merino and Merino-derived sheep breeds: a genome-wide intercontinental study",
+        author = c(p("Ciani", "E."), p("Lasagna", "E."), p("D'Andrea", "M."),
+                   p("Alloggio", "I."), p("Marroni", "F."), p("Ceccobelli", "S."),
+                   p("Delgado Bermejo", "J. V."), p("Sarti", "F. M."), p("Kijas", "J."),
+                   p("Lenstra", "J. A."), p("Pilla", "F.")),
+        year = 2015, doi = "10.5061/dryad.2p0qf", note = "Dryad Digital Repository")
+    )
+  ),
+  list(
+    name = "Potato_div",
+    species = "Solanum tuberosum",
+    common_name = "potato",
+    panel = "586 Wisconsin breeding clones, SNP array, DMv4.03 positions; DIPLOIDIZED (dosage 0 -> -1, dosage 4 -> 1, dosages 1-3 -> 0); allele column is N/N",
+    ploidy = "autotetraploid; stored diploidized (dosage lost)",
+    mating = "outbred (clonal)",
+    license = "CC0-1.0",
+    source = "Zenodo (mirror of Dryad), marker_data.csv (allele dosages 0-4)",
+    source_doi = "10.5061/dryad.3n5tb2rk0",
+    source_url = "https://zenodo.org/records/6818259",
+    reference = "Caraza-Harter & Endelman (2022) Theoretical and Applied Genetics 135(9):2943-2951",
+    doi = "10.1007/s00122-022-04159-z",
+    bundled = FALSE,
+    release = "data-v2",
+    refs = c(
+      bibentry(bibtype = "Article",
+        key = "carazaharter2022potato",
+        title = "The genetic architectures of vine and skin maturity in tetraploid potato",
+        author = c(p("Caraza-Harter", "M. V."), p("Endelman", "J. B.")),
+        journal = "Theoretical and Applied Genetics", year = 2022, volume = 135, number = 9,
+        pages = "2943-2951", doi = "10.1007/s00122-022-04159-z"),
+      bibentry(bibtype = "Misc",
+        key = "dryad2022potato",
+        title = "Data from: The genetic architectures of vine and skin maturity in tetraploid potato",
+        author = c(p("Endelman", "J. B."), p("Caraza-Harter", "M. V.")),
+        year = 2022, doi = "10.5061/dryad.3n5tb2rk0", note = "Dryad Digital Repository (CC0)")
+    )
+  ),
+  list(
+    name = "Sugarcane_div",
+    species = "Saccharum spp. hybrids",
+    common_name = "sugarcane",
+    panel = "432 clones (USDA-ARS Canal Point breeding clones and commercial cultivars), capture sequencing; positions are Sorghum bicolor v3.1 coordinates",
+    ploidy = "polyploid; diploid calls from the source",
+    mating = "outbred (clonal)",
+    license = "Public domain (US Government work)",
+    source = "USDA Ag Data Commons, sugarcane.10501.SNPs_.432.Inds_.vcf",
+    source_doi = "10.15482/USDA.ADC/1528986",
+    source_url = "https://doi.org/10.15482/USDA.ADC/1528986",
+    reference = "Islam et al. (2023) Frontiers in Plant Science 14:1205999",
+    doi = "10.3389/fpls.2023.1205999",
+    bundled = FALSE,
+    release = "data-v2",
+    refs = c(
+      bibentry(bibtype = "Article",
+        key = "islam2023sugarcane",
+        title = "A first look at the ability to use genomic prediction for improving the ratooning ability of sugarcane",
+        author = c(p("Islam", "M. S."), p("Corak", "K."), p("McCord", "P."),
+                   p("Hulse-Kemp", "A. M."), p("Lipka", "A. E.")),
+        journal = "Frontiers in Plant Science", year = 2023, volume = 14,
+        pages = "1205999", doi = "10.3389/fpls.2023.1205999")
     )
   )
 )
@@ -325,7 +592,7 @@ names(datasets) <- vapply(datasets, `[[`, character(1), "name")
 
 chr_range <- function(chr) {
   u <- unique(as.character(chr))
-  is_scaf <- grepl("scaffold", u, ignore.case = TRUE)
+  is_scaf <- grepl("scaffold|^SFD_", u, ignore.case = TRUE)
   main <- u[!is_scaf]
   n_scaf <- sum(is_scaf)
   if (length(main) == 0L) main <- u
@@ -362,8 +629,18 @@ chr_range <- function(chr) {
 ## 3. Compute n_snp / n_ind / het / chr_labels from data-raw/built/<name>.rda
 ## ---------------------------------------------------------------------
 
+# Sample-only data sets (no whole panel hosted) are described by the sample
+# the package ships, so n_snp / n_ind / het / chr_labels are what it delivers.
+source("R/pack.R") # .unpack()
+
 computed <- lapply(datasets, function(d) {
   rda <- file.path(built_dir, paste0(d$name, ".rda"))
+  if (isTRUE(d$sample_only)) {
+    obj <- .unpack(readRDS(file.path("inst", "extdata", "samples", paste0(d$name, ".rds"))))
+    G <- as.matrix(obj[, 6:ncol(obj), drop = FALSE])
+    return(list(n_snp = nrow(obj), n_ind = ncol(obj) - 5L,
+                het = round(sum(G == 0L) / length(G), 3), chr_labels = chr_range(obj$chr)))
+  }
   if (!file.exists(rda)) {
     warning(sprintf("catalog.R: %s not found; leaving n_snp/n_ind/het/chr_labels blank for %s.",
                     rda, d$name), call. = FALSE)
@@ -418,11 +695,12 @@ rows <- lapply(datasets, function(d) {
     license = d$license,
     source = d$source,
     source_doi = d$source_doi,
+    source_url = d$source_url,
     reference = d$reference,
     doi = d$doi,
     bundled = d$bundled,
-    file = if (d$bundled) "" else paste0(d$name, ".rds"),
-    release = if (d$bundled) "" else "data-v1",
+    file = if (d$bundled || isTRUE(d$sample_only)) "" else paste0(d$name, ".rds"),
+    release = if (d$bundled || isTRUE(d$sample_only)) "" else if (is.null(d$release)) "data-v1" else d$release,
     bytes = prev_bytes[[d$name]],
     md5 = prev_md5[[d$name]],
     stringsAsFactors = FALSE, check.names = FALSE
